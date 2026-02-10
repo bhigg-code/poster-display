@@ -1,0 +1,5 @@
+aiohttp>=3.9.0
+pykaleidescape>=1.0.0
+pyatv>=0.14.0
+youtube-search-python>=1.6.6
+httpx>=0.25.0

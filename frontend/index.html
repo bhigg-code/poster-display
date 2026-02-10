@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Now Showing</title>
+    <link rel="stylesheet" href="/static/style.css?v=11">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Oswald:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header" id="header">
+            <div class="header-text">NOW SHOWING</div>
+        </div>
+        
+        <!-- Poster Frame -->
+        <div class="poster-frame">
+            <div class="poster-inner">
+                <img id="poster" src="" alt="Movie Poster" class="poster-image">
+                <div class="poster-overlay" id="posterOverlay"></div>
+            </div>
+        </div>
+        
+        <!-- Movie Info -->
+        <div class="info-panel" id="infoPanel">
+            <div class="movie-title" id="movieTitle"></div>
+            <div class="movie-year" id="movieYear"></div>
+            <div class="play-status" id="playStatus"></div>
+            <div class="movie-synopsis" id="movieSynopsis"></div>
+        </div>
+        
+        <!-- Progress Bar (only shown when playing) -->
+        <div class="progress-container" id="progressContainer">
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <div class="time-info">
+                <span class="time-elapsed" id="timeElapsed">0:00</span>
+                <span class="time-remaining" id="timeRemaining">0:00 remaining</span>
+            </div>
+        </div>
+        
+        <!-- Source indicator (subtle) -->
+        <div class="source-indicator" id="sourceIndicator"></div>
+        <div class="debug-indicator" id="debugIndicator"></div>
+    </div>
+    
+    <script src="/static/app.js?v=11"></script>
+</body>
+</html>

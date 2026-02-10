@@ -1,0 +1,2981 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Poster Display - Admin</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        :root {
+            --bg: #0f1115;
+            --card-bg: #1a1d23;
+            --sidebar-bg: #14161a;
+            --border: #2a2f38;
+            --text: #e4e4e7;
+            --text-muted: #71717a;
+            --accent: #d4af37;
+            --accent-hover: #e5c349;
+            --success: #22c55e;
+            --error: #ef4444;
+            --input-bg: #252830;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+        }
+        
+        /* Sidebar */
+        .sidebar {
+            width: 240px;
+            background: var(--sidebar-bg);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+        }
+        
+        .sidebar-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .sidebar-header h1 {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--accent);
+            margin-bottom: 4px;
+        }
+        
+        .sidebar-header a {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.8rem;
+        }
+        
+        .sidebar-header a:hover {
+            color: var(--accent);
+        }
+        
+        .sidebar-nav {
+            flex: 1;
+            padding: 16px 12px;
+        }
+        
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            color: var(--text-muted);
+            transition: all 0.2s;
+            margin-bottom: 4px;
+        }
+        
+        .nav-item:hover {
+            background: var(--card-bg);
+            color: var(--text);
+        }
+        
+        .nav-item.active {
+            background: var(--accent);
+            color: #000;
+        }
+        
+        .nav-item.active .nav-icon {
+            color: #000;
+        }
+        
+        .nav-icon {
+            font-size: 1.2rem;
+            width: 24px;
+            text-align: center;
+        }
+        
+        .nav-label {
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+        
+        .sidebar-footer {
+            padding: 16px;
+            border-top: 1px solid var(--border);
+        }
+        
+        .status-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+        
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--success);
+        }
+        
+        .status-dot.error {
+            background: var(--error);
+        }
+        
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 24px 32px;
+        }
+        
+        .tab-content {
+            display: none;
+            max-width: 900px;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .page-header {
+            margin-bottom: 24px;
+        }
+        
+        .page-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+        
+        .page-subtitle {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+        
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 20px;
+        }
+        
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .card-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+        
+        .card-subtitle {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+        
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+        }
+        
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        
+        .form-group.full-width {
+            grid-column: 1 / -1;
+        }
+        
+        label {
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        
+        input, select {
+            background: var(--input-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 10px 14px;
+            font-size: 0.95rem;
+            color: var(--text);
+            font-family: inherit;
+            transition: border-color 0.2s;
+        }
+        
+        input:focus, select:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+        
+        input::placeholder {
+            color: var(--text-muted);
+        }
+        
+        input[type="password"] {
+            font-family: monospace;
+        }
+        
+        .btn {
+            background: var(--accent);
+            color: #000;
+            border: none;
+            border-radius: 8px;
+            padding: 10px 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        
+        .btn:hover {
+            background: var(--accent-hover);
+        }
+        
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        .btn-secondary {
+            background: var(--input-bg);
+            color: var(--text);
+            border: 1px solid var(--border);
+        }
+        
+        .btn-secondary:hover {
+            background: var(--border);
+        }
+        
+        .btn-danger {
+            background: var(--error);
+            color: white;
+        }
+        
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 0.8rem;
+        }
+        
+        .inputs-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        
+        .input-item {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            background: var(--input-bg);
+            padding: 14px 18px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+        
+        .input-num {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--accent);
+            min-width: 30px;
+        }
+        
+        .input-info {
+            flex: 1;
+        }
+        
+        .input-name {
+            font-weight: 500;
+        }
+        
+        .input-type {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+        
+        .input-actions {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            padding: 14px 20px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.3s;
+            z-index: 1000;
+        }
+        
+        .toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+        
+        .toast.success {
+            border-color: var(--success);
+        }
+        
+        .toast.error {
+            border-color: var(--error);
+        }
+        
+        .current-status {
+            background: var(--input-bg);
+            padding: 16px;
+            border-radius: 8px;
+        }
+        
+        .status-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .status-row:last-child {
+            border-bottom: none;
+        }
+        
+        .status-label {
+            color: var(--text-muted);
+        }
+        
+        .status-value {
+            font-weight: 500;
+        }
+        
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s;
+            z-index: 1001;
+        }
+        
+        .modal-overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        .modal {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 24px;
+            width: 90%;
+            max-width: 450px;
+        }
+        
+        .modal h3 {
+            margin-bottom: 20px;
+        }
+        
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--border);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .progress-bar-container {
+            background: var(--input-bg);
+            border-radius: 4px;
+            height: 8px;
+            overflow: hidden;
+        }
+        
+        .progress-bar-fill {
+            background: var(--accent);
+            height: 100%;
+            width: 0%;
+            transition: width 0.3s;
+        }
+        
+        .device-card {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            background: var(--input-bg);
+            padding: 14px 18px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            margin-bottom: 10px;
+        }
+        
+        .device-icon {
+            font-size: 1.5rem;
+        }
+        
+        .device-info {
+            flex: 1;
+        }
+        
+        .device-name {
+            font-weight: 500;
+        }
+        
+        .device-details {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+        
+        .device-verified {
+            color: var(--success);
+            font-size: 0.75rem;
+        }
+        
+        .device-unverified {
+            color: var(--text-muted);
+            font-size: 0.75rem;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-muted);
+        }
+        
+        .empty-state-icon {
+            font-size: 3rem;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+        
+        .integration-grid {
+            display: grid;
+            gap: 12px;
+        }
+        
+        .actions-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .log-entry {
+            padding: 8px 12px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            gap: 12px;
+            align-items: flex-start;
+        }
+        
+        .log-entry:hover {
+            background: var(--input-bg);
+        }
+        
+        .log-time {
+            color: var(--text-muted);
+            white-space: nowrap;
+            font-size: 0.8rem;
+        }
+        
+        .log-category {
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            white-space: nowrap;
+        }
+        
+        .log-category.discovery { background: #3b82f6; color: white; }
+        .log-category.integration { background: #8b5cf6; color: white; }
+        .log-category.config { background: #f59e0b; color: black; }
+        .log-category.polling { background: #10b981; color: white; }
+        .log-category.debug { background: #6b7280; color: white; }
+        
+        .log-content {
+            flex: 1;
+            min-width: 0;
+        }
+        
+        .log-action {
+            font-weight: 500;
+        }
+        
+        .log-details {
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            word-break: break-all;
+        }
+        
+        .log-level-success .log-action { color: var(--success); }
+        .log-level-error .log-action { color: var(--error); }
+        .log-level-warning .log-action { color: var(--accent); }
+        
+        .source-tag {
+            font-size: 0.7rem;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 500;
+        }
+        
+        .source-network {
+            background: #3b82f6;
+            color: white;
+        }
+        
+        .source-plex {
+            background: #e5a00d;
+            color: black;
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <h1>🎬 Poster Display</h1>
+            <span id="versionBadge" style="font-size: 0.75rem; color: var(--text-muted); margin-top: -8px;">v--</span>
+            <a href="/">← View Display</a>
+        </div>
+        
+        <nav class="sidebar-nav">
+            <div class="nav-item active" data-tab="integrations">
+                <span class="nav-icon">✅</span>
+                <span class="nav-label">Integrations</span>
+            </div>
+            <div class="nav-item" data-tab="discovery">
+                <span class="nav-icon">🔍</span>
+                <span class="nav-label">Network Discovery</span>
+            </div>
+            <div class="nav-item" data-tab="settings">
+                <span class="nav-icon">⚙️</span>
+                <span class="nav-label">Settings</span>
+            </div>
+        </nav>
+        
+        <div class="sidebar-footer">
+            <div class="status-badge">
+                <span class="status-dot" id="statusDot"></span>
+                <span id="statusText">Connecting...</span>
+            </div>
+        </div>
+    </aside>
+    
+    <!-- Main Content -->
+    <main class="main-content">
+        
+        <!-- Network Discovery Tab -->
+        <div class="tab-content" id="tab-discovery">
+            <div class="page-header">
+                <h2 class="page-title">Network Discovery</h2>
+                <p class="page-subtitle">Find new integrations on your network</p>
+            </div>
+            
+            <div class="actions-row" style="flex-wrap: wrap; gap: 12px;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <label style="text-transform: none; white-space: nowrap;">Network:</label>
+                    <input type="text" id="scanNetwork" placeholder="192.168.1.0/24" style="width: 160px;">
+                </div>
+                <button class="btn" id="scanBtn" onclick="startScan()">Scan Network</button>
+                <button class="btn btn-secondary" onclick="showManualProbe()">+ Manual IP</button>
+            </div>
+            
+            <div class="card" id="discoveryStatusCard" style="display: none;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div class="spinner"></div>
+                    <span id="scanStatusText">Scanning network...</span>
+                </div>
+                <div class="progress-bar-container" style="margin-top: 12px;">
+                    <div class="progress-bar-fill" id="scanProgress"></div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header">
+                    <div>
+                        <div class="card-title">Discovered Devices</div>
+                        <div class="card-subtitle">Click "Add" to configure a device</div>
+                    </div>
+                </div>
+                <div id="discoveredDevices">
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📡</div>
+                        <p>Click "Scan Network" to discover devices</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Discovery Activity Log -->
+            <div class="card" id="discoveryLogCard">
+                <div class="card-header">
+                    <div>
+                        <div class="card-title">Discovery Activity</div>
+                        <div class="card-subtitle">Real-time scan and interrogation details</div>
+                    </div>
+                    <button class="btn btn-secondary btn-sm" onclick="clearDiscoveryLog()">Clear</button>
+                </div>
+                <div id="discoveryLogContainer" style="max-height: 300px; overflow-y: auto; font-family: monospace; font-size: 0.85rem;">
+                    <div class="empty-state" style="padding: 20px;">
+                        <p style="color: var(--text-muted);">Activity will appear here during scans</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Integrations Tab -->
+        <div class="tab-content active" id="tab-integrations">
+            <div class="page-header">
+                <h2 class="page-title">Integrations</h2>
+                <p class="page-subtitle">Active integrations and their status</p>
+            </div>
+            
+            <div class="actions-row">
+                <button class="btn" onclick="refreshIntegrations()">Verify All</button>
+                <button class="btn btn-secondary" onclick="switchTab('discovery')">+ Add New</button>
+            </div>
+            
+            <!-- Current Status -->
+            <div class="card">
+                <div class="card-header">
+                    <div>
+                        <div class="card-title">Current Status</div>
+                        <div class="card-subtitle">Live display state</div>
+                    </div>
+                    <button class="btn btn-secondary btn-sm" onclick="refreshStatus()">Refresh</button>
+                </div>
+                <div class="current-status">
+                    <div class="status-row">
+                        <span class="status-label">Mode</span>
+                        <span class="status-value" id="statMode">--</span>
+                    </div>
+                    <div class="status-row">
+                        <span class="status-label">Current Input</span>
+                        <span class="status-value" id="statInput">--</span>
+                    </div>
+                    <div class="status-row">
+                        <span class="status-label">Now Playing</span>
+                        <span class="status-value" id="statTitle">--</span>
+                    </div>
+                    <div class="status-row">
+                        <span class="status-label">Source</span>
+                        <span class="status-value" id="statSource">--</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Configured Integrations -->
+            <div class="card">
+                <div class="card-header">
+                    <div>
+                        <div class="card-title">Configured Integrations</div>
+                        <div class="card-subtitle">Currently active devices</div>
+                    </div>
+                </div>
+                <div id="configuredIntegrations" class="integration-grid">
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📦</div>
+                        <p>Loading integrations...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Settings Tab -->
+        <div class="tab-content" id="tab-settings">
+            <div class="page-header">
+                <h2 class="page-title">Settings</h2>
+                <p class="page-subtitle">Configure display behavior and system options</p>
+            </div>
+            
+            <!-- Display Settings -->
+            <div class="card">
+                <div class="card-header">
+                    <div>
+                        <div class="card-title">🖼️ Display Settings</div>
+                        <div class="card-subtitle">Timing and appearance</div>
+                    </div>
+                </div>
+                <form id="displayForm" class="form-grid">
+                    <div class="form-group">
+                        <label>Poll Interval (seconds)</label>
+                        <input type="number" id="pollInterval" placeholder="3" min="1" max="30">
+                    </div>
+                    <div class="form-group">
+                        <label>Coming Soon Rotation (seconds)</label>
+                        <input type="number" id="comingSoonInterval" placeholder="15" min="5" max="120">
+                    </div>
+                    <div class="form-group">
+                        <button type="submit" class="btn">Save Display Settings</button>
+                    </div>
+                </form>
+            </div>
+            
+            <!-- System -->
+            <div class="card">
+                <div class="card-header">
+                    <div>
+                        <div class="card-title">🔧 System</div>
+                        <div class="card-subtitle">Server management</div>
+                    </div>
+                </div>
+                <div style="padding: 16px;">
+                    <div style="display: flex; align-items: center; gap: 16px; flex-wrap: wrap;">
+                        <button class="btn btn-secondary" onclick="restartServer()">🔄 Restart Server</button>
+                        <span style="color: var(--text-muted); font-size: 0.9rem;">Restart the poster display server</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Debug Log -->
+            <div class="card">
+                <div class="card-header" style="cursor: pointer;" onclick="toggleDebugSection()">
+                    <div>
+                        <div class="card-title">🐛 Debug Log</div>
+                        <div class="card-subtitle">Real-time activity log for troubleshooting</div>
+                    </div>
+                    <span id="debugToggleIcon" style="font-size: 1.2rem;">▼</span>
+                </div>
+                <div id="debugSection" style="display: none;">
+                    <div class="actions-row" style="padding: 12px 16px; border-top: 1px solid var(--border);">
+                        <button class="btn btn-sm" onclick="refreshDebugLogs()">Refresh</button>
+                        <button class="btn btn-secondary btn-sm" onclick="clearDebugLogs()">Clear</button>
+                        <label style="display: flex; align-items: center; gap: 8px; margin-left: 16px; color: var(--text-muted); font-size: 0.85rem;">
+                            <input type="checkbox" id="debugShowPolling" style="width: auto;" onchange="refreshDebugLogs()">
+                            Show polling
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 8px; margin-left: auto; color: var(--text-muted); font-size: 0.85rem;">
+                            <input type="checkbox" id="debugAutoRefresh" checked style="width: auto;">
+                            Auto-refresh
+                        </label>
+                        <select id="debugFilter" onchange="refreshDebugLogs()" style="padding: 6px 12px; background: var(--input-bg); border: 1px solid var(--border); border-radius: 6px; color: var(--text); margin-left: 16px;">
+                            <option value="">All</option>
+                            <option value="polling">Polling</option>
+                            <option value="discovery">Discovery</option>
+                            <option value="integration">Integration</option>
+                            <option value="config">Config</option>
+                        </select>
+                    </div>
+                    <div id="debugLogContainer" style="max-height: 400px; overflow-y: auto; font-family: monospace; font-size: 0.85rem; padding: 12px 16px;">
+                        <div class="empty-state">
+                            <div class="empty-state-icon">📋</div>
+                            <p>No log entries yet</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    
+    <!-- Add/Edit Input Modal -->
+    <div class="modal-overlay" id="inputModal">
+        <div class="modal">
+            <h3 id="inputModalTitle">Add Input</h3>
+            <form id="inputForm" class="form-grid">
+                <div class="form-group">
+                    <label>Input Number</label>
+                    <input type="number" id="inputNum" min="1" max="10" required>
+                </div>
+                <div class="form-group full-width" id="inputIntegrationGroup">
+                    <label>Integration</label>
+                    <select id="inputIntegration" onchange="onInputIntegrationChange()">
+                        <option value="">-- Select an integration --</option>
+                    </select>
+                </div>
+                <div class="form-group" id="inputNameGroup">
+                    <label>Name</label>
+                    <input type="text" id="inputName" placeholder="e.g., Kaleidescape">
+                </div>
+                <div class="form-group full-width" id="inputTypeGroup">
+                    <label>Type</label>
+                    <select id="inputType">
+                        <option value="kaleidescape">Kaleidescape</option>
+                        <option value="plex">Plex Client (Shield, etc.)</option>
+                        <option value="other">Other (no tracking)</option>
+                    </select>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" onclick="hideModal()">Cancel</button>
+                    <button type="submit" class="btn">Save Input</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Shield Setup Modal -->
+    <div class="modal-overlay" id="shieldModal">
+        <div class="modal">
+            <h3>🎮 Add Shield / Android TV</h3>
+            <p style="color: var(--text-muted); margin-bottom: 20px; font-size: 0.9rem;">
+                Found device at <strong id="shieldIp"></strong>
+            </p>
+            <form id="shieldForm" class="form-grid">
+                <div class="form-group" id="shieldInputGroup">
+                    <label>Atlona Input #</label>
+                    <input type="number" id="shieldInputNum" min="1" max="8">
+                </div>
+                <div class="form-group">
+                    <label>Name</label>
+                    <input type="text" id="shieldInputName" placeholder="e.g., Nvidia Shield" required>
+                </div>
+                <div class="form-group full-width" id="shieldDefaultGroup" style="flex-direction: row; align-items: center; gap: 12px;">
+                    <input type="checkbox" id="shieldModalDefault" style="width: auto;">
+                    <label for="shieldModalDefault" style="text-transform: none; cursor: pointer;">
+                        Set as default display for poster
+                    </label>
+                </div>
+                <div class="form-group full-width" style="flex-direction: row; align-items: center; gap: 12px;">
+                    <input type="checkbox" id="shieldEnableAdb" style="width: auto;" checked>
+                    <label for="shieldEnableAdb" style="text-transform: none; cursor: pointer;">
+                        Enable ADB for media detection (will prompt authorization on Shield)
+                    </label>
+                </div>
+                <div id="shieldEnrollStatus" style="display: none; padding: 12px; background: var(--input-bg); border-radius: 8px; grid-column: 1 / -1;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <div class="spinner" id="shieldSpinner"></div>
+                        <span id="shieldStatusText">Connecting...</span>
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" onclick="hideShieldModal()">Cancel</button>
+                    <button type="submit" class="btn" id="shieldSaveBtn">Add Shield</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Edit Display Device Modal -->
+    <div class="modal-overlay" id="editDeviceModal">
+        <div class="modal" style="max-width: 450px;">
+            <h3 id="editDeviceTitle">Edit Device</h3>
+            <form id="editDeviceForm" class="form-grid">
+                <input type="hidden" id="editDeviceType">
+                <input type="hidden" id="editDeviceHost">
+                <input type="hidden" id="editDeviceOldInput">
+                
+                <div class="form-group">
+                    <label>Name</label>
+                    <input type="text" id="editDeviceName" required>
+                </div>
+                
+                <!-- Atlona Input (shown when Atlona is configured) -->
+                <div class="form-group" id="editDeviceInputGroup" style="display: none;">
+                    <label>Atlona Input #</label>
+                    <input type="number" id="editDeviceInput" min="1" max="8">
+                </div>
+                
+                <!-- Default Display (shown when no Atlona) -->
+                <div class="form-group full-width" id="editDeviceDefaultGroup" style="display: none; flex-direction: row; align-items: center; gap: 12px;">
+                    <input type="checkbox" id="editDeviceDefault" style="width: auto;">
+                    <label for="editDeviceDefault" style="text-transform: none; cursor: pointer;">
+                        Set as default display for poster
+                    </label>
+                </div>
+                
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" onclick="hideEditDeviceModal()">Cancel</button>
+                    <button type="submit" class="btn">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Apple TV Setup Modal -->
+    <div class="modal-overlay" id="appletvModal">
+        <div class="modal" style="max-width: 500px;">
+            <h3>🍎 Add Apple TV</h3>
+            <p style="color: var(--text-muted); margin-bottom: 20px; font-size: 0.9rem;">
+                Found device at <strong id="appletvIp"></strong>
+            </p>
+            <form id="appletvForm" class="form-grid">
+                <div class="form-group" id="appletvInputGroup">
+                    <label>Atlona Input #</label>
+                    <input type="number" id="appletvInputNum" min="1" max="8">
+                </div>
+                <div class="form-group">
+                    <label>Name</label>
+                    <input type="text" id="appletvInputName" placeholder="e.g., Living Room Apple TV" required>
+                </div>
+                
+                <!-- Default Display (shown when no Atlona) -->
+                <div class="form-group full-width" id="appletvDefaultGroup" style="flex-direction: row; align-items: center; gap: 12px;">
+                    <input type="checkbox" id="appletvModalDefault" style="width: auto;">
+                    <label for="appletvModalDefault" style="text-transform: none; cursor: pointer;">
+                        Set as default display (used when no matrix switcher)
+                    </label>
+                </div>
+                
+                <!-- Pairing Section -->
+                <div class="form-group full-width" style="flex-direction: row; align-items: center; gap: 12px; margin-top: 8px;">
+                    <input type="checkbox" id="appletvEnablePairing" style="width: auto;" checked>
+                    <label for="appletvEnablePairing" style="text-transform: none; cursor: pointer;">
+                        Enable media detection (requires pairing - a PIN will appear on your TV)
+                    </label>
+                </div>
+                
+                <!-- Pairing Status -->
+                <div id="appletvPairingStatus" style="display: none; padding: 16px; background: var(--input-bg); border-radius: 8px; grid-column: 1 / -1;">
+                    <div id="appletvPairingPrompt" style="display: none;">
+                        <p style="margin-bottom: 12px; color: var(--text);">Enter the 4-digit PIN shown on your Apple TV:</p>
+                        <div style="display: flex; gap: 12px; align-items: center;">
+                            <input type="text" id="appletvPinInput" maxlength="4" pattern="[0-9]{4}" 
+                                   style="width: 140px; text-align: center; font-size: 1.8rem; letter-spacing: 12px; font-family: monospace; padding: 12px 8px;"
+                                   placeholder="0000" autocomplete="off">
+                            <button type="button" class="btn" onclick="submitAppleTVPin()">Submit PIN</button>
+                        </div>
+                    </div>
+                    <div id="appletvPairingProgress" style="display: none;">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <div class="spinner" id="appletvSpinner"></div>
+                            <span id="appletvStatusText">Starting pairing...</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" onclick="hideAppleTVModal()">Cancel</button>
+                    <button type="submit" class="btn" id="appletvSaveBtn">Add Apple TV</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Apple TV Pairing Modal (for Integrations tab) -->
+    <div class="modal-overlay" id="pairingModal">
+        <div class="modal" style="max-width: 450px;">
+            <h3>🍎 Pair Apple TV</h3>
+            <p style="color: var(--text-muted); margin-bottom: 20px; font-size: 0.9rem;">
+                Pairing <strong id="pairingDeviceName"></strong> at <strong id="pairingDeviceIp"></strong>
+            </p>
+            
+            <div id="pairingContent">
+                <div id="pairingStart">
+                    <p style="margin-bottom: 16px;">Pairing allows the poster display to detect what's currently playing on your Apple TV.</p>
+                    <button class="btn" onclick="startPairing()">Start Pairing</button>
+                </div>
+                
+                <div id="pairingProgress" style="display: none;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <div class="spinner"></div>
+                        <span id="pairingStatusText">Connecting to Apple TV...</span>
+                    </div>
+                </div>
+                
+                <div id="pairingPinEntry" style="display: none;">
+                    <p style="margin-bottom: 12px; color: var(--text);">Enter the 4-digit PIN shown on your Apple TV:</p>
+                    <div style="display: flex; gap: 12px; align-items: center;">
+                        <input type="text" id="pairingPinInput" maxlength="4" pattern="[0-9]{4}" 
+                               style="width: 140px; text-align: center; font-size: 1.8rem; letter-spacing: 12px; font-family: monospace; padding: 12px 8px;"
+                               placeholder="0000" autocomplete="off">
+                        <button class="btn" onclick="submitPairingPin()">Submit</button>
+                    </div>
+                </div>
+                
+                <div id="pairingResult" style="display: none; padding: 16px; background: var(--input-bg); border-radius: 8px; margin-top: 16px;">
+                    <span id="pairingResultText"></span>
+                </div>
+            </div>
+            
+            <div class="modal-actions" style="margin-top: 20px;">
+                <button type="button" class="btn btn-secondary" onclick="hidePairingModal()">Close</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Atlona Config Modal -->
+    <div class="modal-overlay" id="atlonaModal">
+        <div class="modal">
+            <h3>🔀 Configure Atlona Matrix</h3>
+            <p style="color: var(--text-muted); margin-bottom: 20px; font-size: 0.9rem;">
+                Found at <strong id="atlonaModalIp"></strong>
+            </p>
+            <form id="atlonaModalForm" class="form-grid">
+                <div class="form-group">
+                    <label>Name</label>
+                    <input type="text" id="atlonaModalName" placeholder="Atlona Matrix" value="Atlona Matrix">
+                </div>
+                <div class="form-group">
+                    <label>Port</label>
+                    <input type="number" id="atlonaModalPort" value="23">
+                </div>
+                <div class="form-group">
+                    <label>Media Room Output #</label>
+                    <input type="number" id="atlonaModalOutput" placeholder="1" min="1" max="10" value="1">
+                </div>
+                <div class="form-group">
+                    <label>Poll Interval (seconds)</label>
+                    <input type="number" id="atlonaModalPollInterval" value="15" min="5" max="60">
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" onclick="hideAtlonaModal()">Cancel</button>
+                    <button type="submit" class="btn">Add Atlona</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Kaleidescape Config Modal -->
+    <div class="modal-overlay" id="kaleidescapeModal">
+        <div class="modal">
+            <h3>🎬 Configure Kaleidescape</h3>
+            <p style="color: var(--text-muted); margin-bottom: 20px; font-size: 0.9rem;">
+                Found at <strong id="kaleidescapeModalIp"></strong>
+            </p>
+            <form id="kaleidescapeModalForm" class="form-grid">
+                <div class="form-group">
+                    <label>Name</label>
+                    <input type="text" id="kaleidescapeModalName" placeholder="Kaleidescape" value="Kaleidescape">
+                </div>
+                <div class="form-group">
+                    <label>Port</label>
+                    <input type="number" id="kaleidescapeModalPort" value="10000">
+                </div>
+                <div class="form-group" id="kaleidescapeInputGroup">
+                    <label>Atlona Input #</label>
+                    <input type="number" id="kaleidescapeModalInput" placeholder="2" min="1" max="8">
+                </div>
+                <div class="form-group full-width" id="kaleidescapeDefaultGroup" style="flex-direction: row; align-items: center; gap: 12px;">
+                    <input type="checkbox" id="kaleidescapeModalDefault" style="width: auto;">
+                    <label for="kaleidescapeModalDefault" style="text-transform: none; cursor: pointer;">
+                        Set as default display (used when no matrix switcher)
+                    </label>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" onclick="hideKaleidescapeModal()">Cancel</button>
+                    <button type="submit" class="btn" id="kaleidescapeSaveBtn">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Plex Config Modal -->
+    <div class="modal-overlay" id="plexModal">
+        <div class="modal" style="max-width: 500px;">
+            <h3>📺 Configure Plex Server</h3>
+            <p style="color: var(--text-muted); margin-bottom: 20px; font-size: 0.9rem;">
+                Found at <strong id="plexModalIp"></strong>
+            </p>
+            <form id="plexModalForm" class="form-grid">
+                <div class="form-group">
+                    <label>Name</label>
+                    <input type="text" id="plexModalName" placeholder="Plex Server">
+                </div>
+                <div class="form-group">
+                    <label>Port</label>
+                    <input type="number" id="plexModalPort" value="32400">
+                </div>
+                <div class="form-group full-width">
+                    <label>Plex Token</label>
+                    <input type="password" id="plexModalToken" placeholder="Your Plex token (required)">
+                </div>
+                <div class="form-group full-width">
+                    <label>Libraries for "Coming Soon" (comma-separated)</label>
+                    <input type="text" id="plexModalLibraries" placeholder="e.g., Movies, 4K Movies">
+                </div>
+                <div class="form-group full-width" style="flex-direction: row; align-items: center; gap: 12px;">
+                    <input type="checkbox" id="plexModalIncludePlayers" style="width: auto;">
+                    <label for="plexModalIncludePlayers" style="text-transform: none; cursor: pointer;">
+                        Include players in Network Discovery
+                    </label>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" onclick="hidePlexModal()">Cancel</button>
+                    <button type="submit" class="btn">Add Plex</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Toast -->
+    <div class="toast" id="toast">
+        <span id="toastMessage"></span>
+    </div>
+    
+    <script>
+        // HTML escaping to prevent XSS
+        function escapeHtml(text) {
+            if (text === null || text === undefined) return '';
+            const div = document.createElement('div');
+            div.textContent = String(text);
+            return div.innerHTML;
+        }
+        
+        // State
+        let config = {};
+        let editingInput = null;
+        let scanInterval = null;
+        
+        // Tab Navigation
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.addEventListener('click', () => {
+                const tab = item.dataset.tab;
+                switchTab(tab);
+            });
+        });
+        
+        function switchTab(tabId) {
+            // Update nav items
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.toggle('active', item.dataset.tab === tabId);
+            });
+            
+            // Update tab content
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.toggle('active', content.id === 'tab-' + tabId);
+            });
+            
+            // Note: Debug logs refresh when expanding the debug section in Settings
+        }
+        
+        // Load config on start
+        document.addEventListener('DOMContentLoaded', () => {
+            loadConfig();
+            loadIntegrations();
+            loadVersion();
+            refreshStatus();
+            loadDefaultSubnet();
+            setInterval(refreshStatus, 5000);
+        });
+        
+        async function loadVersion() {
+            try {
+                const resp = await fetch('/api/version');
+                const data = await resp.json();
+                document.getElementById('versionBadge').textContent = 'v' + data.version;
+            } catch (e) {
+                console.error('Failed to load version:', e);
+            }
+        }
+        
+        async function restartServer() {
+            if (!confirm('Restart the poster display server?')) return;
+            try {
+                showToast('Restarting server...', 'info');
+                await fetch('/api/restart', { method: 'POST' });
+                setTimeout(() => {
+                    showToast('Server restarted, reconnecting...', 'success');
+                    setTimeout(() => location.reload(), 2000);
+                }, 2000);
+            } catch (e) {
+                showToast('Restart failed: ' + e.message, 'error');
+            }
+        }
+        
+        function toggleDebugSection() {
+            const section = document.getElementById('debugSection');
+            const icon = document.getElementById('debugToggleIcon');
+            if (section.style.display === 'none') {
+                section.style.display = 'block';
+                icon.textContent = '▲';
+                refreshDebugLogs();
+            } else {
+                section.style.display = 'none';
+                icon.textContent = '▼';
+            }
+        }
+        
+        async function loadDefaultSubnet() {
+            try {
+                const resp = await fetch('/api/discover/subnets');
+                const data = await resp.json();
+                if (data.subnets && data.subnets.length > 0) {
+                    // Convert "192.168.1" to "192.168.1.0/24"
+                    const subnet = data.subnets[0];
+                    document.getElementById('scanNetwork').value = subnet + '.0/24';
+                }
+            } catch (e) {
+                console.error('Failed to load subnets:', e);
+                document.getElementById('scanNetwork').value = '192.168.1.0/24';
+            }
+        }
+        
+        async function loadConfig() {
+            try {
+                const resp = await fetch('/api/config');
+                config = await resp.json();
+                populateForm();
+            } catch (e) {
+                console.error('Failed to load config:', e);
+                showToast('Failed to load config', 'error');
+            }
+        }
+        
+        function populateForm() {
+            // Display settings only (integrations configured via modals)
+            document.getElementById('pollInterval').value = config.display?.poll_interval || 3;
+            document.getElementById('comingSoonInterval').value = config.display?.coming_soon_interval || 15;
+        }
+        
+        function renderInputs() {
+            const list = document.getElementById('inputsList');
+            const inputs = config.inputs || {};
+            
+            if (Object.keys(inputs).length === 0) {
+                list.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🎛️</div><p>No inputs configured</p></div>';
+                return;
+            }
+            
+            // Sort by input number
+            const sorted = Object.entries(inputs).sort((a, b) => parseInt(a[0]) - parseInt(b[0]));
+            
+            list.innerHTML = sorted.map(([num, input]) => `
+                <div class="input-item">
+                    <span class="input-num">${num}</span>
+                    <div class="input-info">
+                        <div class="input-name">${input.name || 'Unnamed'}</div>
+                        <div class="input-type">${input.type || 'other'}</div>
+                    </div>
+                    <div class="input-actions">
+                        <button class="btn btn-secondary btn-sm" onclick="editInput('${num}')">Edit</button>
+                        <button class="btn btn-danger btn-sm" onclick="deleteInput('${num}')">Delete</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        async function refreshStatus() {
+            try {
+                const resp = await fetch('/api/state');
+                const state = await resp.json();
+                
+                document.getElementById('statusDot').classList.remove('error');
+                document.getElementById('statusText').textContent = 'Connected';
+                
+                document.getElementById('statMode').textContent = state.mode || '--';
+                document.getElementById('statInput').textContent = state.current_input || '--';
+                document.getElementById('statTitle').textContent = state.title || '(nothing)';
+                document.getElementById('statSource').textContent = state.source_name || '--';
+            } catch (e) {
+                document.getElementById('statusDot').classList.add('error');
+                document.getElementById('statusText').textContent = 'Disconnected';
+            }
+        }
+        
+        // Form handlers
+        document.getElementById('displayForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            await saveSection('display', {
+                poll_interval: parseInt(document.getElementById('pollInterval').value),
+                coming_soon_interval: parseInt(document.getElementById('comingSoonInterval').value),
+            });
+        });
+        
+        async function saveSection(section, data) {
+            try {
+                // Add discovery source info if we're adding from discovery
+                if (addingFromDiscovery) {
+                    data._source = 'discovery';
+                    data._source_ip = discoveryAddIp;
+                }
+                
+                const resp = await fetch(`/api/config/${section}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data),
+                });
+                
+                if (resp.ok) {
+                    showToast('Settings saved!', 'success');
+                    loadConfig();
+                    loadIntegrations();
+                    
+                    // Refresh discovery log if we added from discovery
+                    if (addingFromDiscovery) {
+                        pollDiscoveryLog();
+                        addingFromDiscovery = false;
+                        discoveryAddIp = '';
+                    }
+                } else {
+                    showToast('Failed to save', 'error');
+                }
+            } catch (e) {
+                showToast('Error: ' + e.message, 'error');
+            }
+        }
+        
+        // Input modal
+        function getAvailableIntegrations() {
+            // Build list of configured integrations that can be assigned to inputs
+            const integrations = [];
+            
+            if (config.kaleidescape?.host && config.kaleidescape?.enabled) {
+                integrations.push({
+                    id: 'kaleidescape',
+                    name: config.kaleidescape.name || 'Kaleidescape',
+                    type: 'kaleidescape',
+                    host: config.kaleidescape.host,
+                    port: config.kaleidescape.port || 10000,
+                    icon: '🎬'
+                });
+            }
+            
+            if (config.plex?.host && config.plex?.enabled) {
+                integrations.push({
+                    id: 'plex',
+                    name: config.plex.name || 'Plex',
+                    type: 'plex',
+                    host: config.plex.host,
+                    port: config.plex.port || 32400,
+                    icon: '📺'
+                });
+            }
+            
+            // Add shields and apple TVs from existing inputs
+            for (const [num, inp] of Object.entries(config.inputs || {})) {
+                if (inp.shield_host) {
+                    integrations.push({
+                        id: `shield-${num}`,
+                        name: inp.name || `Shield (Input ${num})`,
+                        type: 'plex',
+                        host: inp.shield_host,
+                        shield_host: inp.shield_host,
+                        icon: '🎮'
+                    });
+                }
+                if (inp.appletv_host) {
+                    integrations.push({
+                        id: `appletv-${num}`,
+                        name: inp.name || `Apple TV (Input ${num})`,
+                        type: 'plex',
+                        host: inp.appletv_host,
+                        appletv_host: inp.appletv_host,
+                        icon: '🍎'
+                    });
+                }
+            }
+            
+            return integrations;
+        }
+        
+        function populateIntegrationDropdown(selectedId = '') {
+            const select = document.getElementById('inputIntegration');
+            const integrations = getAvailableIntegrations();
+            
+            select.innerHTML = '<option value="">-- Select an integration --</option>';
+            
+            for (const int of integrations) {
+                const option = document.createElement('option');
+                option.value = int.id;
+                option.textContent = `${int.icon} ${int.name}`;
+                option.dataset.integration = JSON.stringify(int);
+                if (int.id === selectedId) option.selected = true;
+                select.appendChild(option);
+            }
+            
+            // Add "Other" option for manual entry
+            const otherOption = document.createElement('option');
+            otherOption.value = 'other';
+            otherOption.textContent = '📡 Other (manual entry)';
+            if (selectedId === 'other') otherOption.selected = true;
+            select.appendChild(otherOption);
+        }
+        
+        function onInputIntegrationChange() {
+            const select = document.getElementById('inputIntegration');
+            const selectedOption = select.options[select.selectedIndex];
+            const nameGroup = document.getElementById('inputNameGroup');
+            const typeGroup = document.getElementById('inputTypeGroup');
+            
+            if (select.value === 'other' || select.value === '') {
+                // Show manual entry fields
+                nameGroup.style.display = 'flex';
+                typeGroup.style.display = 'flex';
+                if (select.value === 'other') {
+                    document.getElementById('inputName').value = '';
+                    document.getElementById('inputType').value = 'other';
+                }
+            } else if (selectedOption.dataset.integration) {
+                // Hide manual entry, use integration data
+                const int = JSON.parse(selectedOption.dataset.integration);
+                nameGroup.style.display = 'none';
+                typeGroup.style.display = 'none';
+                document.getElementById('inputName').value = int.name;
+                document.getElementById('inputType').value = int.type;
+            }
+        }
+
+        function showAddInput() {
+            editingInput = null;
+            document.getElementById('inputModalTitle').textContent = 'Add Input';
+            document.getElementById('inputNum').value = '';
+            document.getElementById('inputNum').disabled = false;
+            document.getElementById('inputName').value = '';
+            document.getElementById('inputType').value = 'other';
+            populateIntegrationDropdown('');
+            document.getElementById('inputIntegration').value = '';
+            document.getElementById('inputNameGroup').style.display = 'flex';
+            document.getElementById('inputTypeGroup').style.display = 'flex';
+            document.getElementById('inputModal').classList.add('show');
+        }
+        
+        function editInput(num) {
+            editingInput = num;
+            const input = config.inputs[num];
+            document.getElementById('inputModalTitle').textContent = 'Edit Input ' + num;
+            document.getElementById('inputNum').value = num;
+            document.getElementById('inputNum').disabled = true;
+            document.getElementById('inputName').value = input.name || '';
+            document.getElementById('inputType').value = input.type || 'other';
+            
+            // Try to match to an integration
+            let matchedId = 'other';
+            if (input.type === 'kaleidescape' && config.kaleidescape?.enabled) {
+                matchedId = 'kaleidescape';
+            } else if (input.shield_host) {
+                matchedId = `shield-${num}`;
+            } else if (input.appletv_host) {
+                matchedId = `appletv-${num}`;
+            }
+            populateIntegrationDropdown(matchedId);
+            onInputIntegrationChange();
+            
+            document.getElementById('inputModal').classList.add('show');
+        }
+        
+        function hideModal() {
+            document.getElementById('inputModal').classList.remove('show');
+        }
+        
+        document.getElementById('inputForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const num = document.getElementById('inputNum').value;
+            const data = {
+                name: document.getElementById('inputName').value,
+                type: document.getElementById('inputType').value,
+            };
+            
+            try {
+                const resp = await fetch(`/api/config/input/${num}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data),
+                });
+                
+                if (resp.ok) {
+                    showToast('Input saved!', 'success');
+                    hideModal();
+                    loadConfig();
+                    loadIntegrations(); // Refresh Atlona inputs display
+                } else {
+                    showToast('Failed to save input', 'error');
+                }
+            } catch (e) {
+                showToast('Error: ' + e.message, 'error');
+            }
+        });
+        
+        async function deleteInput(num) {
+            if (!confirm(`Delete input ${num}?`)) return;
+            
+            try {
+                const resp = await fetch(`/api/config/input/${num}`, {
+                    method: 'DELETE',
+                });
+                
+                if (resp.ok) {
+                    showToast('Input deleted', 'success');
+                    loadConfig();
+                    loadIntegrations(); // Refresh the integrations list including Atlona inputs
+                } else {
+                    showToast('Failed to delete', 'error');
+                }
+            } catch (e) {
+                showToast('Error: ' + e.message, 'error');
+            }
+        }
+        
+        // Toast
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            const msg = document.getElementById('toastMessage');
+            msg.textContent = message;
+            toast.className = 'toast show ' + type;
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+        
+        // =====================================================
+        // Configured Integrations Functions
+        // =====================================================
+        
+        async function loadIntegrations() {
+            try {
+                const resp = await fetch('/api/integrations/status');
+                const data = await resp.json();
+                renderConfiguredIntegrations(data.integrations);
+            } catch (e) {
+                console.error('Failed to load integrations:', e);
+                document.getElementById('configuredIntegrations').innerHTML = 
+                    '<div class="empty-state"><div class="empty-state-icon">⚠️</div><p>Failed to load integrations</p></div>';
+            }
+        }
+        
+        async function refreshIntegrations() {
+            document.getElementById('configuredIntegrations').innerHTML = 
+                '<div class="empty-state"><div class="spinner"></div><p style="margin-top: 16px;">Verifying integrations...</p></div>';
+            await loadIntegrations();
+            showToast('Integrations verified', 'success');
+        }
+        
+        function renderConfiguredIntegrations(integrations) {
+            const container = document.getElementById('configuredIntegrations');
+            if (!integrations || integrations.length === 0) {
+                container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📦</div><p>No integrations configured yet</p><p style="margin-top: 8px; font-size: 0.85rem;">Use Network Discovery to find devices</p></div>';
+                return;
+            }
+            
+            const icons = {
+                atlona: '🔀',
+                kaleidescape: '🎬',
+                plex: '📺',
+                shield: '🎮',
+                appletv: '🍎'
+            };
+            
+            container.innerHTML = integrations.map(i => {
+                let statusLine = i.verified ? '✓ Verified & Online' : '✗ Offline or Unreachable';
+                if (i.type === 'appletv') {
+                    if (i.verified && i.paired) {
+                        statusLine = '✓ Online & Paired';
+                    } else if (i.verified && !i.paired) {
+                        statusLine = '✓ Online • ⚠️ Not Paired (media detection disabled)';
+                    }
+                }
+                
+                // Build playback status line
+                let playbackLine = '';
+                if (i.verified && i.now_playing) {
+                    const stateIcon = i.playback_state === 'playing' ? '▶️' : 
+                                     i.playback_state === 'paused' ? '⏸️' : '💤';
+                    playbackLine = `<div class="device-playback" style="margin-top: 4px; font-size: 0.85rem; color: ${i.playback_state === 'playing' ? 'var(--success)' : 'var(--text-muted)'};">
+                        ${stateIcon} ${i.now_playing}
+                    </div>`;
+                } else if (i.verified) {
+                    playbackLine = `<div class="device-playback" style="margin-top: 4px; font-size: 0.85rem; color: var(--text-muted);">
+                        💤 Idle
+                    </div>`;
+                }
+                
+                // Determine edit action based on type
+                let editBtn = '';
+                // Check if this specific integration is the default
+                // For integrations with input_num (shield, appletv), match both type and input
+                // For integrations without input_num (kaleidescape, plex), just match type
+                const defaultType = config.display?.default_display;
+                const defaultInput = config.display?.default_input;
+                const isDefault = defaultType === i.type && (!i.input_num || !defaultInput || defaultInput === i.input_num);
+                if (i.type === 'atlona') {
+                    editBtn = `<button class="btn btn-secondary btn-sm" onclick="editAtlona('${i.host}', ${i.port}, '${i.name.replace(/'/g, "\\'")}')">Edit</button>`;
+                } else if (i.type === 'kaleidescape') {
+                    editBtn = `<button class="btn btn-secondary btn-sm" onclick="editKaleidescape('${i.host}', ${i.port}, '${i.name.replace(/'/g, "\\'")}')">Edit</button>`;
+                } else if (i.type === 'plex') {
+                    editBtn = `<button class="btn btn-secondary btn-sm" onclick="editPlex('${i.host}', ${i.port}, '${i.name.replace(/'/g, "\\'")}')">Edit</button>`;
+                } else if (i.type === 'appletv') {
+                    editBtn = `<button class="btn btn-secondary btn-sm" onclick="editDisplayDevice('appletv', '${i.host}', '${i.name.replace(/'/g, "\\'")}', '${i.input_num || ''}')">Edit</button>
+                              <button class="btn btn-sm" onclick="showPairingModal('${i.host}', '${i.name.replace(/'/g, "\\'")}')">${i.paired ? 'Re-pair' : 'Pair'}</button>`;
+                } else if (i.type === 'shield') {
+                    editBtn = `<button class="btn btn-secondary btn-sm" onclick="editDisplayDevice('shield', '${i.host}', '${i.name.replace(/'/g, "\\'")}', '${i.input_num || ''}')">Edit</button>`;
+                }
+                
+                // Check if this is the default display
+                const hasAtlona = config.atlona?.host && config.atlona?.enabled;
+                const defaultBadge = (!hasAtlona && isDefault) ? '<span style="background: var(--accent); color: white; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; margin-left: 8px;">DEFAULT</span>' : '';
+                const inputBadge = (hasAtlona && i.input_num) ? `<span style="background: var(--input-bg); padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; margin-left: 8px;">Input ${i.input_num}</span>` : '';
+                
+                // Build INPUT ROUTING section for Atlona
+                let inputsSection = '';
+                if (i.type === 'atlona') {
+                    const inputTypeIcons = {
+                        kaleidescape: '🎬',
+                        plex: '📺',
+                        shield: '🎮',
+                        appletv: '🍎',
+                        other: '📡'
+                    };
+                    const inputEntries = Object.entries(config.inputs || {}).sort((a, b) => parseInt(a[0]) - parseInt(b[0]));
+                    if (inputEntries.length > 0) {
+                        inputsSection = `
+                            <div class="atlona-inputs" style="margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border);">
+                                <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
+                                    <span>INPUT ROUTING (Output ${i.media_room_output || '?'})</span>
+                                    <button class="btn btn-secondary btn-sm" onclick="showAddInput()">+ Add Input</button>
+                                </div>
+                                ${inputEntries.map(([num, inp]) => `
+                                    <div class="input-row" style="display: flex; align-items: center; gap: 10px; padding: 8px; background: var(--input-bg); border-radius: 6px; margin-bottom: 6px;">
+                                        <span style="font-weight: 600; color: var(--accent); min-width: 24px;">${num}</span>
+                                        <span style="font-size: 1.1rem;">${inputTypeIcons[inp.type] || '📡'}</span>
+                                        <div style="flex: 1;">
+                                            <div style="font-weight: 500;">${escapeHtml(inp.name)}</div>
+                                            <div style="font-size: 0.75rem; color: var(--text-muted);">${inp.type}${inp.host ? ' • ' + inp.host : ''}${inp.shield_host ? ' • ' + inp.shield_host : ''}${inp.appletv_host ? ' • ' + inp.appletv_host : ''}</div>
+                                        </div>
+                                        <button class="btn btn-secondary btn-sm" onclick="editInput('${num}')" style="padding: 4px 8px;">Edit</button>
+                                        <button class="btn btn-danger btn-sm" onclick="deleteInput('${num}')" style="padding: 4px 8px;">×</button>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        `;
+                    } else {
+                        inputsSection = `
+                            <div class="atlona-inputs" style="margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border);">
+                                <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
+                                    <span>INPUT ROUTING (Output ${i.media_room_output || '?'})</span>
+                                    <button class="btn btn-secondary btn-sm" onclick="showAddInput()">+ Add Input</button>
+                                </div>
+                                <div style="text-align: center; padding: 16px; color: var(--text-muted);">
+                                    No inputs configured. Add inputs to map devices to matrix inputs.
+                                </div>
+                            </div>
+                        `;
+                    }
+                }
+                
+                return `
+                <div class="device-card" style="${i.type === 'atlona' ? 'flex-direction: column; align-items: stretch;' : ''}">
+                    <div style="display: flex; align-items: center; gap: 16px;">
+                        <span class="device-icon">${icons[i.type] || '❓'}</span>
+                        <div class="device-info">
+                            <div class="device-name">${escapeHtml(i.name)}${defaultBadge}${inputBadge}</div>
+                            <div class="device-details">${i.host}:${i.port} • ${i.type}</div>
+                            <div class="${(i.verified && (i.type !== 'appletv' || i.paired)) ? 'device-verified' : 'device-unverified'}">
+                                ${statusLine}
+                            </div>
+                            ${playbackLine}
+                        </div>
+                        ${editBtn}
+                        <button class="btn btn-danger btn-sm" onclick="deleteIntegration('${i.type}', '${i.host}', '${i.input_num || ''}')">Delete</button>
+                    </div>
+                    ${inputsSection}
+                </div>
+            `}).join('');
+        }
+        
+        async function deleteIntegration(type, host, inputNum) {
+            if (!confirm(`Delete ${type} integration at ${host}?`)) return;
+            
+            try {
+                if (type === 'atlona') {
+                    await saveSection('atlona', { host: '', port: 23, media_room_output: 9, enabled: false });
+                } else if (type === 'kaleidescape') {
+                    await saveSection('kaleidescape', { host: '', port: 10000, enabled: false });
+                } else if (type === 'plex') {
+                    await saveSection('plex', { host: '', port: 32400, token: '', libraries: [], enabled: false });
+                } else if (type === 'shield' && inputNum) {
+                    // Remove shield_host from the input
+                    const inp = config.inputs[inputNum];
+                    if (inp) {
+                        delete inp.shield_host;
+                        await fetch(`/api/config/input/${inputNum}`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(inp),
+                        });
+                    }
+                } else if (type === 'appletv' && inputNum) {
+                    // Remove appletv_host from the input
+                    const inp = config.inputs[inputNum];
+                    if (inp) {
+                        delete inp.appletv_host;
+                        await fetch(`/api/config/input/${inputNum}`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(inp),
+                        });
+                    }
+                }
+                showToast('Integration deleted', 'success');
+                loadConfig();
+                loadIntegrations();
+            } catch (e) {
+                showToast('Delete failed: ' + e.message, 'error');
+            }
+        }
+        
+        // =====================================================
+        // Network Discovery Functions
+        // =====================================================
+        
+        let lastDiscoveryLogCount = 0;
+        
+        async function startScan() {
+            try {
+                // Clear the discovery log when starting a new scan
+                clearDiscoveryLog();
+                lastDiscoveryLogCount = 0;
+                
+                // Parse network input (e.g., "192.168.1.0/24" -> "192.168.1")
+                const networkInput = document.getElementById('scanNetwork').value.trim();
+                let subnets = null;
+                
+                if (networkInput) {
+                    // Extract subnet prefix from CIDR notation or IP
+                    const match = networkInput.match(/^(\d+\.\d+\.\d+)(?:\.\d+)?(?:\/\d+)?$/);
+                    if (match) {
+                        subnets = [match[1]];
+                    } else {
+                        showToast('Invalid network format. Use e.g., 192.168.1.0/24', 'error');
+                        return;
+                    }
+                }
+                
+                const resp = await fetch('/api/discover/scan', { 
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ subnets: subnets })
+                });
+                if (resp.ok) {
+                    document.getElementById('scanBtn').disabled = true;
+                    document.getElementById('scanBtn').textContent = 'Scanning...';
+                    document.getElementById('discoveryStatusCard').style.display = 'block';
+                    pollScanStatus();
+                    pollDiscoveryLog();
+                    scanInterval = setInterval(() => {
+                        pollScanStatus();
+                        pollDiscoveryLog();
+                    }, 1500);
+                } else {
+                    const data = await resp.json();
+                    showToast(data.error || 'Scan failed', 'error');
+                }
+            } catch (e) {
+                showToast('Error: ' + e.message, 'error');
+            }
+        }
+        
+        async function pollDiscoveryLog() {
+            try {
+                const resp = await fetch('/api/debug/logs?category=discovery&limit=50');
+                const data = await resp.json();
+                renderDiscoveryLog(data.entries);
+            } catch (e) {
+                console.error('Discovery log poll error:', e);
+            }
+        }
+        
+        function renderDiscoveryLog(entries) {
+            const container = document.getElementById('discoveryLogContainer');
+            
+            if (!entries || entries.length === 0) {
+                container.innerHTML = '<div class="empty-state" style="padding: 20px;"><p style="color: var(--text-muted);">Activity will appear here during scans</p></div>';
+                return;
+            }
+            
+            container.innerHTML = entries.map(e => {
+                const time = new Date(e.timestamp).toLocaleTimeString();
+                return `
+                    <div class="log-entry log-level-${e.level}">
+                        <span class="log-time">${time}</span>
+                        <span class="log-category ${e.category}">${e.category}</span>
+                        <div class="log-content">
+                            <div class="log-action">${e.action}</div>
+                            ${e.details ? `<div class="log-details">${e.details}</div>` : ''}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            // Auto-scroll to bottom if new entries
+            if (entries.length > lastDiscoveryLogCount) {
+                container.scrollTop = container.scrollHeight;
+                lastDiscoveryLogCount = entries.length;
+            }
+        }
+        
+        function clearDiscoveryLog() {
+            document.getElementById('discoveryLogContainer').innerHTML = 
+                '<div class="empty-state" style="padding: 20px;"><p style="color: var(--text-muted);">Activity will appear here during scans</p></div>';
+            lastDiscoveryLogCount = 0;
+        }
+        
+        async function pollScanStatus() {
+            try {
+                const resp = await fetch('/api/discover/status');
+                const data = await resp.json();
+                
+                const pct = data.total > 0 ? (data.progress / data.total * 100) : 0;
+                document.getElementById('scanProgress').style.width = pct + '%';
+                document.getElementById('scanStatusText').textContent = 
+                    data.scanning ? (data.phase || 'Scanning...') : 'Scan complete';
+                
+                renderDiscoveredDevices(data.devices);
+                
+                if (!data.scanning) {
+                    clearInterval(scanInterval);
+                    document.getElementById('scanBtn').disabled = false;
+                    document.getElementById('scanBtn').textContent = 'Scan Network';
+                    document.getElementById('discoveryStatusCard').style.display = 'none';
+                    if (data.devices.length > 0) {
+                        showToast('Found ' + data.devices.length + ' device(s)', 'success');
+                    }
+                }
+            } catch (e) {
+                console.error('Poll error:', e);
+            }
+        }
+        
+        function renderDiscoveredDevices(devices) {
+            const container = document.getElementById('discoveredDevices');
+            if (!devices || devices.length === 0) {
+                container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📡</div><p>No devices found yet</p></div>';
+                return;
+            }
+            
+            // Filter out already-configured integrations
+            const configuredIps = new Set();
+            if (config.atlona?.host && config.atlona?.enabled) configuredIps.add(config.atlona.host);
+            if (config.kaleidescape?.host && config.kaleidescape?.enabled) configuredIps.add(config.kaleidescape.host);
+            if (config.plex?.host && config.plex?.enabled) configuredIps.add(config.plex.host);
+            
+            // Also filter out Kaleidescape storage units (keep only players)
+            const filteredDevices = devices.filter(d => {
+                // Skip if already configured
+                if (configuredIps.has(d.ip)) return false;
+                // Skip Kaleidescape storage units (they have 'storage' in the name or type)
+                if (d.integration_type === 'kaleidescape' && d.name && d.name.toLowerCase().includes('storage')) return false;
+                return true;
+            });
+            
+            if (filteredDevices.length === 0) {
+                container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">✅</div><p>All discovered devices have been configured</p></div>';
+                return;
+            }
+            
+            const icons = {
+                atlona: '🔀',
+                kaleidescape: '🎬',
+                plex: '📺',
+                shield: '🎮',
+                appletv: '🍎',
+                plex_player: '📺',
+                unknown: '❓'
+            };
+            
+            const sourceLabels = {
+                network: '🌐 Network Scan',
+                plex: '📺 Plex Discovery'
+            };
+            
+            container.innerHTML = '<div class="integration-grid">' + filteredDevices.map(d => {
+                const sourceLabel = sourceLabels[d.source] || d.source || 'Unknown';
+                const sourceClass = d.source === 'plex' ? 'source-plex' : 'source-network';
+                return `
+                <div class="device-card">
+                    <span class="device-icon">${icons[d.integration_type] || '❓'}</span>
+                    <div class="device-info">
+                        <div class="device-name">${escapeHtml(d.name)}</div>
+                        <div class="device-details">${d.ip}${d.port ? ':' + d.port : ''} • ${d.integration_type}</div>
+                        <div style="display: flex; gap: 8px; align-items: center; margin-top: 4px;">
+                            <span class="source-tag ${sourceClass}">${sourceLabel}</span>
+                            <span class="${d.verified ? 'device-verified' : 'device-unverified'}">
+                                ${d.verified ? '✓ Verified' : '⚠ Requires setup'}
+                            </span>
+                        </div>
+                    </div>
+                    <button class="btn btn-sm" onclick="addDevice('${d.integration_type}', '${d.ip}', ${d.port || 0}, '${d.name.replace(/'/g, "\\'")}')">Add</button>
+                </div>
+            `}).join('') + '</div>';
+        }
+        
+        // Track if we're adding from discovery (for logging)
+        let addingFromDiscovery = false;
+        let discoveryAddIp = '';
+        
+        async function addDevice(type, ip, port, name) {
+            addingFromDiscovery = true;
+            discoveryAddIp = ip;
+            
+            // Shield and AppleTV need input number - show modal
+            if (type === 'shield') {
+                showShieldModal(ip, name);
+                return;
+            }
+            
+            if (type === 'appletv') {
+                showAppleTVModal(ip, name);
+                return;
+            }
+            
+            // Plex needs token - show modal
+            if (type === 'plex') {
+                showPlexModal(ip, port, name);
+                return;
+            }
+            
+            // Atlona and Kaleidescape can be added directly with defaults
+            if (type === 'atlona') {
+                try {
+                    const resp = await fetch('/api/config/atlona', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            name: name || 'Atlona Matrix',
+                            host: ip,
+                            port: port || 23,
+                            media_room_output: 1,
+                            poll_interval: 15,
+                            enabled: true,
+                        }),
+                    });
+                    if (resp.ok) {
+                        showToast('Atlona added!', 'success');
+                        loadConfig();
+                        loadIntegrations();
+                        pollScanStatus(); // Refresh discovery list
+                    } else {
+                        showToast('Failed to add Atlona', 'error');
+                    }
+                } catch (err) {
+                    showToast('Error: ' + err.message, 'error');
+                }
+                return;
+            }
+            
+            if (type === 'kaleidescape') {
+                try {
+                    const resp = await fetch('/api/config/kaleidescape', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            name: name || 'Kaleidescape',
+                            host: ip,
+                            port: port || 10000,
+                            enabled: true,
+                        }),
+                    });
+                    console.log('Kaleidescape add response:', resp.status, resp.ok);
+                    if (resp.ok) {
+                        showToast('Kaleidescape added!', 'success');
+                        loadConfig();
+                        loadIntegrations();
+                        pollScanStatus(); // Refresh discovery list
+                    } else {
+                        const errText = await resp.text();
+                        console.error('Kaleidescape add failed:', resp.status, errText);
+                        showToast('Failed to add Kaleidescape', 'error');
+                    }
+                } catch (err) {
+                    console.error('Kaleidescape add error:', err);
+                    showToast('Error: ' + err.message, 'error');
+                }
+                return;
+            }
+        }
+        
+        // =====================================================
+        // Atlona Modal Functions
+        // =====================================================
+        
+        let pendingAtlonaIp = '';
+        
+        function showAtlonaModal(ip, port, name) {
+            pendingAtlonaIp = ip;
+            document.getElementById('atlonaModalIp').textContent = ip;
+            document.getElementById('atlonaModalName').value = name || 'Atlona Matrix';
+            document.getElementById('atlonaModalPort').value = port || 23;
+            document.getElementById('atlonaModalOutput').value = 1;
+            document.getElementById('atlonaModalPollInterval').value = 15;
+            document.getElementById('atlonaModal').classList.add('show');
+        }
+        
+        function hideAtlonaModal() {
+            document.getElementById('atlonaModal').classList.remove('show');
+            pendingAtlonaIp = '';
+        }
+        
+        document.getElementById('atlonaModalForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const data = {
+                name: document.getElementById('atlonaModalName').value,
+                host: pendingAtlonaIp,
+                port: parseInt(document.getElementById('atlonaModalPort').value),
+                media_room_output: parseInt(document.getElementById('atlonaModalOutput').value),
+                poll_interval: parseInt(document.getElementById('atlonaModalPollInterval').value),
+                enabled: true,
+            };
+            
+            try {
+                const resp = await fetch('/api/config/atlona', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data),
+                });
+                if (resp.ok) {
+                    showToast('Atlona added!', 'success');
+                    hideAtlonaModal();
+                    loadConfig();
+                    loadIntegrations();
+                    pollScanStatus(); // Refresh discovery list
+                } else {
+                    showToast('Failed to add Atlona', 'error');
+                }
+            } catch (err) {
+                showToast('Error: ' + err.message, 'error');
+            }
+        });
+        
+        function editAtlona(ip, port, name) {
+            // Pre-fill from current config
+            pendingAtlonaIp = ip;
+            document.getElementById('atlonaModalIp').textContent = ip;
+            document.getElementById('atlonaModalName').value = config.atlona?.name || name;
+            document.getElementById('atlonaModalPort').value = config.atlona?.port || port;
+            document.getElementById('atlonaModalOutput').value = config.atlona?.media_room_output || 1;
+            document.getElementById('atlonaModalPollInterval').value = config.atlona?.poll_interval || 15;
+            document.getElementById('atlonaModal').classList.add('show');
+        }
+        
+        // =====================================================
+        // Kaleidescape Modal Functions
+        // =====================================================
+        
+        let pendingKaleidescapeIp = '';
+        
+        function showKaleidescapeModal(ip, port, name) {
+            pendingKaleidescapeIp = ip;
+            document.getElementById('kaleidescapeModalIp').textContent = ip;
+            document.getElementById('kaleidescapeModalName').value = name || 'Kaleidescape';
+            document.getElementById('kaleidescapeModalPort').value = port || 10000;
+            document.getElementById('kaleidescapeModalInput').value = '';
+            document.getElementById('kaleidescapeModalDefault').checked = false;
+            
+            // Show/hide Atlona input field based on whether Atlona is configured
+            const hasAtlona = config.atlona?.host && config.atlona?.enabled;
+            document.getElementById('kaleidescapeInputGroup').style.display = hasAtlona ? 'flex' : 'none';
+            document.getElementById('kaleidescapeDefaultGroup').style.display = hasAtlona ? 'none' : 'flex';
+            
+            // Auto-check default if no Atlona
+            if (!hasAtlona) {
+                document.getElementById('kaleidescapeModalDefault').checked = true;
+            }
+            
+            document.getElementById('kaleidescapeModal').classList.add('show');
+        }
+        
+        function hideKaleidescapeModal() {
+            document.getElementById('kaleidescapeModal').classList.remove('show');
+            pendingKaleidescapeIp = '';
+        }
+        
+        document.getElementById('kaleidescapeModalForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const inputNum = document.getElementById('kaleidescapeModalInput').value;
+            const name = document.getElementById('kaleidescapeModalName').value;
+            const port = parseInt(document.getElementById('kaleidescapeModalPort').value);
+            const setAsDefault = document.getElementById('kaleidescapeModalDefault').checked;
+            
+            // Save kaleidescape integration
+            const kscapeData = {
+                name: name,
+                host: pendingKaleidescapeIp,
+                port: port,
+                enabled: true,
+            };
+            
+            try {
+                const resp = await fetch('/api/config/kaleidescape', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(kscapeData),
+                });
+                
+                // Also add input mapping if provided
+                if (inputNum) {
+                    await fetch(`/api/config/input/${inputNum}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            name: name,
+                            type: 'kaleidescape',
+                            host: pendingKaleidescapeIp,
+                            port: port,
+                        }),
+                    });
+                }
+                
+                // Set as default display if checked
+                if (setAsDefault) {
+                    const defaultData = { default_display: 'kaleidescape' };
+                    if (inputNum) defaultData.default_input = inputNum;
+                    await fetch('/api/config/display', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(defaultData),
+                    });
+                }
+                
+                if (resp.ok) {
+                    showToast('Kaleidescape added!', 'success');
+                    hideKaleidescapeModal();
+                    loadConfig();
+                    loadIntegrations();
+                    pollScanStatus(); // Refresh discovery list
+                } else {
+                    showToast('Failed to add Kaleidescape', 'error');
+                }
+            } catch (err) {
+                showToast('Error: ' + err.message, 'error');
+            }
+        });
+        
+        function editKaleidescape(ip, port, name) {
+            pendingKaleidescapeIp = ip;
+            document.getElementById('kaleidescapeModalIp').textContent = ip;
+            document.getElementById('kaleidescapeModalName').value = config.kaleidescape?.name || name;
+            document.getElementById('kaleidescapeModalPort').value = config.kaleidescape?.port || port;
+            
+            // Find the input number for this kaleidescape
+            const inputEntry = Object.entries(config.inputs || {}).find(([num, cfg]) => cfg.type === 'kaleidescape');
+            document.getElementById('kaleidescapeModalInput').value = inputEntry ? inputEntry[0] : '';
+            
+            // Show/hide Atlona input field based on whether Atlona is configured
+            const hasAtlona = config.atlona?.host && config.atlona?.enabled;
+            document.getElementById('kaleidescapeInputGroup').style.display = hasAtlona ? 'flex' : 'none';
+            document.getElementById('kaleidescapeDefaultGroup').style.display = hasAtlona ? 'none' : 'flex';
+            
+            // Check default if this is currently the default display
+            const isDefault = config.display?.default_display === 'kaleidescape';
+            document.getElementById('kaleidescapeModalDefault').checked = isDefault;
+            
+            document.getElementById('kaleidescapeModal').classList.add('show');
+        }
+        
+        // =====================================================
+        // Plex Modal Functions
+        // =====================================================
+        
+        let pendingPlexIp = '';
+        
+        function showPlexModal(ip, port, name) {
+            pendingPlexIp = ip;
+            document.getElementById('plexModalIp').textContent = ip;
+            document.getElementById('plexModalName').value = name || 'Plex Server';
+            document.getElementById('plexModalPort').value = port || 32400;
+            document.getElementById('plexModalToken').value = '';
+            document.getElementById('plexModalLibraries').value = '';
+            document.getElementById('plexModalIncludePlayers').checked = false;
+            document.getElementById('plexModal').classList.add('show');
+        }
+        
+        function hidePlexModal() {
+            document.getElementById('plexModal').classList.remove('show');
+            pendingPlexIp = '';
+        }
+        
+        document.getElementById('plexModalForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const token = document.getElementById('plexModalToken').value;
+            if (!token) {
+                showToast('Plex token is required', 'error');
+                return;
+            }
+            
+            const libraries = document.getElementById('plexModalLibraries').value
+                .split(',')
+                .map(s => s.trim())
+                .filter(s => s);
+            
+            const data = {
+                name: document.getElementById('plexModalName').value,
+                host: pendingPlexIp,
+                port: parseInt(document.getElementById('plexModalPort').value),
+                token: token,
+                libraries: libraries,
+                include_players_in_discovery: document.getElementById('plexModalIncludePlayers').checked,
+                enabled: true,
+            };
+            
+            try {
+                const resp = await fetch('/api/config/plex', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data),
+                });
+                if (resp.ok) {
+                    showToast('Plex added!', 'success');
+                    hidePlexModal();
+                    loadConfig();
+                    loadIntegrations();
+                    pollScanStatus(); // Refresh discovery list
+                } else {
+                    showToast('Failed to add Plex', 'error');
+                }
+            } catch (err) {
+                showToast('Error: ' + err.message, 'error');
+            }
+        });
+        
+        function editPlex(ip, port, name) {
+            pendingPlexIp = ip;
+            document.getElementById('plexModalIp').textContent = ip;
+            document.getElementById('plexModalName').value = config.plex?.name || name;
+            document.getElementById('plexModalPort').value = config.plex?.port || port;
+            document.getElementById('plexModalToken').value = config.plex?.token || '';
+            document.getElementById('plexModalLibraries').value = (config.plex?.libraries || []).join(', ');
+            document.getElementById('plexModalIncludePlayers').checked = config.plex?.include_players_in_discovery || false;
+            document.getElementById('plexModal').classList.add('show');
+        }
+        
+        // =====================================================
+        // Shield Modal Functions
+        // =====================================================
+        
+        let pendingShieldIp = '';
+        
+        function showShieldModal(ip, name) {
+            pendingShieldIp = ip;
+            document.getElementById('shieldIp').textContent = ip;
+            document.getElementById('shieldInputNum').value = '';
+            document.getElementById('shieldInputName').value = name || 'Nvidia Shield';
+            document.getElementById('shieldEnableAdb').checked = true;
+            document.getElementById('shieldModalDefault').checked = false;
+            document.getElementById('shieldEnrollStatus').style.display = 'none';
+            document.getElementById('shieldSaveBtn').disabled = false;
+            
+            // Show/hide Atlona input field based on whether Atlona is configured
+            const hasAtlona = config.atlona?.host && config.atlona?.enabled;
+            document.getElementById('shieldInputGroup').style.display = hasAtlona ? 'flex' : 'none';
+            document.getElementById('shieldDefaultGroup').style.display = hasAtlona ? 'none' : 'flex';
+            
+            // Auto-check default if no Atlona
+            if (!hasAtlona) {
+                document.getElementById('shieldModalDefault').checked = true;
+            }
+            
+            document.getElementById('shieldModal').classList.add('show');
+        }
+        
+        function hideShieldModal() {
+            document.getElementById('shieldModal').classList.remove('show');
+            pendingShieldIp = '';
+        }
+        
+        // =====================================================
+        // Edit Display Device Modal
+        // =====================================================
+        
+        function editDisplayDevice(type, host, name, inputNum) {
+            document.getElementById('editDeviceType').value = type;
+            document.getElementById('editDeviceHost').value = host;
+            document.getElementById('editDeviceOldInput').value = inputNum || '';
+            document.getElementById('editDeviceName').value = name;
+            document.getElementById('editDeviceInput').value = inputNum || '';
+            
+            const hasAtlona = config.atlona?.host && config.atlona?.enabled;
+            const isDefault = config.display?.default_display === type;
+            
+            // Show/hide appropriate fields
+            document.getElementById('editDeviceInputGroup').style.display = hasAtlona ? 'flex' : 'none';
+            document.getElementById('editDeviceDefaultGroup').style.display = hasAtlona ? 'none' : 'flex';
+            document.getElementById('editDeviceDefault').checked = isDefault;
+            
+            const icon = type === 'shield' ? '🎮' : type === 'appletv' ? '🍎' : '📺';
+            document.getElementById('editDeviceTitle').textContent = `${icon} Edit ${name}`;
+            
+            document.getElementById('editDeviceModal').classList.add('show');
+        }
+        
+        function hideEditDeviceModal() {
+            document.getElementById('editDeviceModal').classList.remove('show');
+        }
+        
+        document.getElementById('editDeviceForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const type = document.getElementById('editDeviceType').value;
+            const host = document.getElementById('editDeviceHost').value;
+            const oldInputNum = document.getElementById('editDeviceOldInput').value;
+            const name = document.getElementById('editDeviceName').value;
+            const inputNum = document.getElementById('editDeviceInput').value;
+            const setAsDefault = document.getElementById('editDeviceDefault').checked;
+            const hasAtlona = config.atlona?.host && config.atlona?.enabled;
+            
+            try {
+                // Determine the host key based on type
+                const hostKey = type === 'shield' ? 'shield_host' : 'appletv_host';
+                
+                // If input number changed and we have Atlona, need to move the config
+                if (hasAtlona && inputNum !== oldInputNum) {
+                    // Delete from old input
+                    if (oldInputNum) {
+                        const oldInp = config.inputs[oldInputNum] || {};
+                        delete oldInp[hostKey];
+                        await fetch(`/api/config/input/${oldInputNum}`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(oldInp),
+                        });
+                    }
+                }
+                
+                // Save to the input
+                const targetInput = hasAtlona ? inputNum : (oldInputNum || '1');
+                const inputData = {
+                    name: name,
+                    type: 'plex',
+                    [hostKey]: host,
+                };
+                
+                await fetch(`/api/config/input/${targetInput}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(inputData),
+                });
+                
+                // Set as default if checked (only when no Atlona)
+                if (!hasAtlona && setAsDefault) {
+                    await fetch('/api/config/display', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ default_display: type, default_input: targetInput }),
+                    });
+                }
+                
+                showToast('Device updated!', 'success');
+                hideEditDeviceModal();
+                loadConfig();
+                loadIntegrations();
+            } catch (err) {
+                showToast('Error: ' + err.message, 'error');
+            }
+        });
+        
+        document.getElementById('shieldForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const inputNum = document.getElementById('shieldInputNum').value;
+            const inputName = document.getElementById('shieldInputName').value;
+            const enableAdb = document.getElementById('shieldEnableAdb').checked;
+            const setAsDefault = document.getElementById('shieldModalDefault').checked;
+            const hasAtlona = config.atlona?.host && config.atlona?.enabled;
+            
+            // Only require input number when Atlona is configured
+            if (hasAtlona && !inputNum) {
+                showToast('Input number is required', 'error');
+                return;
+            }
+            
+            // If ADB is enabled, attempt enrollment first
+            if (enableAdb) {
+                document.getElementById('shieldEnrollStatus').style.display = 'block';
+                document.getElementById('shieldSpinner').style.display = 'block';
+                document.getElementById('shieldStatusText').textContent = 'Connecting to Shield... Check TV for authorization prompt.';
+                document.getElementById('shieldSaveBtn').disabled = true;
+                
+                try {
+                    const resp = await fetch('/api/shield/enroll', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ ip: pendingShieldIp })
+                    });
+                    const data = await resp.json();
+                    
+                    document.getElementById('shieldSpinner').style.display = 'none';
+                    
+                    if (data.connected) {
+                        document.getElementById('shieldStatusText').textContent = '✓ ADB connected! ' + (data.app_name ? 'Running: ' + data.app_name : '');
+                        document.getElementById('shieldStatusText').style.color = 'var(--success)';
+                    } else {
+                        document.getElementById('shieldStatusText').textContent = '⚠ ' + data.message;
+                        document.getElementById('shieldStatusText').style.color = 'var(--accent)';
+                    }
+                } catch (err) {
+                    document.getElementById('shieldSpinner').style.display = 'none';
+                    document.getElementById('shieldStatusText').textContent = '✗ Connection failed: ' + err.message;
+                    document.getElementById('shieldStatusText').style.color = 'var(--error)';
+                }
+                
+                document.getElementById('shieldSaveBtn').disabled = false;
+            }
+            
+            // Save the input config
+            const inputData = {
+                name: inputName,
+                type: 'plex',
+                shield_host: enableAdb ? pendingShieldIp : undefined,
+                _source: 'discovery',
+                _source_ip: pendingShieldIp
+            };
+            
+            // Get next available input number if no Atlona
+            let actualInputNum = inputNum;
+            if (!hasAtlona) {
+                const existingInputs = Object.keys(config.inputs || {}).map(n => parseInt(n));
+                actualInputNum = existingInputs.length > 0 ? Math.max(...existingInputs) + 1 : 1;
+            }
+            
+            try {
+                const resp = await fetch(`/api/config/input/${actualInputNum}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(inputData),
+                });
+                
+                if (resp.ok) {
+                    // Set as default display if checked (only when no Atlona)
+                    if (!hasAtlona && setAsDefault) {
+                        await fetch('/api/config/display', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ default_display: 'shield', default_input: String(actualInputNum) }),
+                        });
+                    }
+                    
+                    showToast('Shield added successfully!', 'success');
+                    hideShieldModal();
+                    loadConfig();
+                    loadIntegrations();
+                    // Refresh discovery log
+                    pollDiscoveryLog();
+                } else {
+                    showToast('Failed to save input', 'error');
+                }
+            } catch (err) {
+                showToast('Error: ' + err.message, 'error');
+            }
+        });
+        
+        // =====================================================
+        // Apple TV Modal Functions
+        // =====================================================
+        
+        let pendingAppleTVIp = '';
+        let appletvPairingComplete = false;
+        
+        function showAppleTVModal(ip, name) {
+            pendingAppleTVIp = ip;
+            appletvPairingComplete = false;
+            document.getElementById('appletvIp').textContent = ip;
+            document.getElementById('appletvInputNum').value = '';
+            document.getElementById('appletvInputName').value = name || 'Apple TV';
+            document.getElementById('appletvEnablePairing').checked = true;
+            document.getElementById('appletvPairingStatus').style.display = 'none';
+            document.getElementById('appletvPairingPrompt').style.display = 'none';
+            document.getElementById('appletvPairingProgress').style.display = 'none';
+            document.getElementById('appletvPinInput').value = '';
+            document.getElementById('appletvSaveBtn').disabled = false;
+            document.getElementById('appletvModalDefault').checked = false;
+            
+            // Show/hide Atlona input field based on whether Atlona is configured
+            const hasAtlona = config.atlona?.host && config.atlona?.enabled;
+            document.getElementById('appletvInputGroup').style.display = hasAtlona ? 'flex' : 'none';
+            document.getElementById('appletvDefaultGroup').style.display = hasAtlona ? 'none' : 'flex';
+            
+            // Auto-check default if no Atlona
+            if (!hasAtlona) {
+                document.getElementById('appletvModalDefault').checked = true;
+            }
+            
+            document.getElementById('appletvModal').classList.add('show');
+        }
+        
+        function hideAppleTVModal() {
+            // Cancel any in-progress pairing
+            if (pendingAppleTVIp && !appletvPairingComplete) {
+                fetch('/api/appletv/pair/cancel', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ip: pendingAppleTVIp })
+                }).catch(() => {});
+            }
+            document.getElementById('appletvModal').classList.remove('show');
+            pendingAppleTVIp = '';
+        }
+        
+        async function startAppleTVPairing() {
+            const statusDiv = document.getElementById('appletvPairingStatus');
+            const progressDiv = document.getElementById('appletvPairingProgress');
+            const promptDiv = document.getElementById('appletvPairingPrompt');
+            const statusText = document.getElementById('appletvStatusText');
+            
+            statusDiv.style.display = 'block';
+            progressDiv.style.display = 'flex';
+            promptDiv.style.display = 'none';
+            statusText.textContent = 'Connecting to Apple TV...';
+            statusText.style.color = 'var(--text)';
+            
+            try {
+                const resp = await fetch('/api/appletv/pair/start', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ip: pendingAppleTVIp, protocol: 'companion' })
+                });
+                const data = await resp.json();
+                
+                if (data.success) {
+                    if (data.already_paired) {
+                        // Already paired for this protocol, move to next or complete
+                        document.getElementById('appletvSpinner').style.display = 'none';
+                        if (currentPairingProtocol === 'companion') {
+                            // Try airplay next
+                            statusText.textContent = '✓ Companion already paired! Checking airplay...';
+                            statusText.style.color = 'var(--success)';
+                            currentPairingProtocol = 'airplay';
+                            setTimeout(() => startAppleTVPairing(), 500);
+                        } else {
+                            // All done
+                            statusText.textContent = '✓ Already fully paired!';
+                            statusText.style.color = 'var(--success)';
+                            appletvPairingComplete = true;
+                            setTimeout(() => saveAppleTV(), 1000);
+                        }
+                    } else {
+                        // Show PIN entry
+                        progressDiv.style.display = 'none';
+                        promptDiv.style.display = 'block';
+                        document.getElementById('appletvPinInput').focus();
+                    }
+                } else {
+                    statusText.textContent = '✗ ' + (data.error || 'Failed to start pairing');
+                    statusText.style.color = 'var(--error)';
+                    document.getElementById('appletvSpinner').style.display = 'none';
+                }
+            } catch (err) {
+                statusText.textContent = '✗ Connection error: ' + err.message;
+                statusText.style.color = 'var(--error)';
+                document.getElementById('appletvSpinner').style.display = 'none';
+            }
+        }
+        
+        // Track which protocol we're currently pairing
+        let currentPairingProtocol = 'companion';
+        
+        async function submitAppleTVPin() {
+            const pin = document.getElementById('appletvPinInput').value;
+            if (!pin || pin.length !== 4) {
+                showToast('Please enter a 4-digit PIN', 'error');
+                return;
+            }
+            
+            const progressDiv = document.getElementById('appletvPairingProgress');
+            const promptDiv = document.getElementById('appletvPairingPrompt');
+            const statusText = document.getElementById('appletvStatusText');
+            
+            progressDiv.style.display = 'flex';
+            promptDiv.style.display = 'none';
+            document.getElementById('appletvSpinner').style.display = 'block';
+            statusText.textContent = `Verifying ${currentPairingProtocol} PIN...`;
+            statusText.style.color = 'var(--text)';
+            
+            // If we're on companion, chain to airplay next
+            const nextProtocol = currentPairingProtocol === 'companion' ? 'airplay' : null;
+            
+            try {
+                const resp = await fetch('/api/appletv/pair/finish', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ip: pendingAppleTVIp, pin: pin, next_protocol: nextProtocol })
+                });
+                const data = await resp.json();
+                
+                document.getElementById('appletvSpinner').style.display = 'none';
+                
+                if (data.success) {
+                    if (data.partial && data.next_protocol) {
+                        // Companion paired, now do airplay
+                        currentPairingProtocol = data.next_protocol;
+                        statusText.textContent = `✓ Companion paired! Now enter PIN for ${data.next_protocol}...`;
+                        statusText.style.color = 'var(--success)';
+                        
+                        // Show PIN prompt for next protocol
+                        setTimeout(() => {
+                            promptDiv.style.display = 'block';
+                            progressDiv.style.display = 'none';
+                            document.getElementById('appletvPinInput').value = '';
+                            document.getElementById('appletvPinInput').focus();
+                        }, 1500);
+                        return;
+                    }
+                    
+                    // Fully paired
+                    statusText.textContent = '✓ Pairing complete! Adding Apple TV...';
+                    statusText.style.color = 'var(--success)';
+                    appletvPairingComplete = true;
+                    currentPairingProtocol = 'companion';  // Reset for next time
+                    
+                    // Auto-save and close after successful pairing
+                    setTimeout(() => saveAppleTV(), 500);
+                    return;
+                } else {
+                    statusText.textContent = '✗ ' + (data.error || 'Pairing failed');
+                    statusText.style.color = 'var(--error)';
+                    // Show PIN prompt again
+                    setTimeout(() => {
+                        promptDiv.style.display = 'block';
+                        progressDiv.style.display = 'none';
+                        document.getElementById('appletvPinInput').value = '';
+                        document.getElementById('appletvPinInput').focus();
+                    }, 2000);
+                }
+            } catch (err) {
+                document.getElementById('appletvSpinner').style.display = 'none';
+                statusText.textContent = '✗ Error: ' + err.message;
+                statusText.style.color = 'var(--error)';
+            }
+        }
+        
+        async function saveAppleTV() {
+            const inputNum = document.getElementById('appletvInputNum').value;
+            const inputName = document.getElementById('appletvInputName').value;
+            const setAsDefault = document.getElementById('appletvModalDefault').checked;
+            const hasAtlona = config.atlona?.host && config.atlona?.enabled;
+            
+            // Require input number only if Atlona is configured
+            if (hasAtlona && !inputNum) {
+                showToast('Input number is required', 'error');
+                return;
+            }
+            
+            try {
+                // Save input config if input number provided
+                if (inputNum) {
+                    const inputData = {
+                        name: inputName,
+                        type: 'plex',  // Apple TV will show Plex content
+                        appletv_host: pendingAppleTVIp,
+                        _source: 'discovery',
+                        _source_ip: pendingAppleTVIp
+                    };
+                    
+                    const resp = await fetch(`/api/config/input/${inputNum}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(inputData),
+                    });
+                    
+                    if (!resp.ok) {
+                        showToast('Failed to save input', 'error');
+                        return;
+                    }
+                } else {
+                    // No input number - just save as a standalone Apple TV
+                    // We need to create an input entry with a generated number
+                    const nextInputNum = Object.keys(config.inputs || {}).length + 1;
+                    const inputData = {
+                        name: inputName,
+                        type: 'plex',
+                        appletv_host: pendingAppleTVIp,
+                    };
+                    
+                    await fetch(`/api/config/input/${nextInputNum}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(inputData),
+                    });
+                }
+                
+                // Set as default display if checked
+                if (setAsDefault) {
+                    const defaultInputNum = inputNum || (Object.keys(config.inputs || {}).length + 1);
+                    await fetch('/api/config/display', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ default_display: 'appletv', default_input: String(defaultInputNum) }),
+                    });
+                }
+                
+                showToast('Apple TV added!', 'success');
+                document.getElementById('appletvModal').classList.remove('show');
+                pendingAppleTVIp = '';
+                loadConfig();
+                loadIntegrations();
+                pollScanStatus(); // Refresh discovery list
+            } catch (err) {
+                showToast('Error: ' + err.message, 'error');
+            }
+        }
+        
+        document.getElementById('appletvForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const inputNum = document.getElementById('appletvInputNum').value;
+            const enablePairing = document.getElementById('appletvEnablePairing').checked;
+            const hasAtlona = config.atlona?.host && config.atlona?.enabled;
+            
+            // Only require input number if Atlona is configured
+            if (hasAtlona && !inputNum) {
+                showToast('Input number is required', 'error');
+                return;
+            }
+            
+            // If pairing enabled but not yet started, start it first
+            if (enablePairing && !appletvPairingComplete) {
+                document.getElementById('appletvSaveBtn').disabled = true;
+                await startAppleTVPairing();
+                return;  // Pairing will auto-save on success
+            }
+            
+            // Save without pairing (or pairing already complete)
+            await saveAppleTV();
+        });
+        
+        // Handle Enter key in PIN input
+        document.getElementById('appletvPinInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                submitAppleTVPin();
+            }
+        });
+        
+        function showManualProbe() {
+            const ip = prompt('Enter IP address to probe:');
+            if (ip) probeIP(ip);
+        }
+        
+        // =====================================================
+        // Pairing Modal (Integrations tab)
+        // =====================================================
+        
+        let pairingIp = '';
+        
+        function showPairingModal(ip, name) {
+            pairingIp = ip;
+            document.getElementById('pairingDeviceName').textContent = name;
+            document.getElementById('pairingDeviceIp').textContent = ip;
+            document.getElementById('pairingStart').style.display = 'block';
+            document.getElementById('pairingProgress').style.display = 'none';
+            document.getElementById('pairingPinEntry').style.display = 'none';
+            document.getElementById('pairingResult').style.display = 'none';
+            document.getElementById('pairingPinInput').value = '';
+            document.getElementById('pairingModal').classList.add('show');
+        }
+        
+        function hidePairingModal() {
+            // Cancel any in-progress pairing
+            if (pairingIp) {
+                fetch('/api/appletv/pair/cancel', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ip: pairingIp })
+                }).catch(() => {});
+            }
+            document.getElementById('pairingModal').classList.remove('show');
+            pairingIp = '';
+            // Refresh integrations to show updated pairing status
+            loadIntegrations();
+        }
+        
+        async function startPairing() {
+            document.getElementById('pairingStart').style.display = 'none';
+            document.getElementById('pairingProgress').style.display = 'flex';
+            document.getElementById('pairingStatusText').textContent = 'Connecting to Apple TV...';
+            
+            try {
+                const resp = await fetch('/api/appletv/pair/start', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ip: pairingIp, protocol: 'companion' })
+                });
+                const data = await resp.json();
+                
+                if (data.success) {
+                    document.getElementById('pairingProgress').style.display = 'none';
+                    document.getElementById('pairingPinEntry').style.display = 'block';
+                    document.getElementById('pairingPinInput').focus();
+                } else {
+                    showPairingError(data.error || 'Failed to start pairing');
+                }
+            } catch (err) {
+                showPairingError('Connection error: ' + err.message);
+            }
+        }
+        
+        async function submitPairingPin() {
+            const pin = document.getElementById('pairingPinInput').value;
+            if (!pin || pin.length !== 4) {
+                showToast('Please enter a 4-digit PIN', 'error');
+                return;
+            }
+            
+            document.getElementById('pairingPinEntry').style.display = 'none';
+            document.getElementById('pairingProgress').style.display = 'flex';
+            document.getElementById('pairingStatusText').textContent = 'Verifying PIN...';
+            
+            try {
+                const resp = await fetch('/api/appletv/pair/finish', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ip: pairingIp, pin: pin })
+                });
+                const data = await resp.json();
+                
+                document.getElementById('pairingProgress').style.display = 'none';
+                
+                if (data.success) {
+                    showPairingSuccess('Pairing successful! Media detection is now enabled.');
+                } else {
+                    // Show error but allow retry
+                    document.getElementById('pairingResult').style.display = 'block';
+                    document.getElementById('pairingResultText').innerHTML = 
+                        `<span style="color: var(--error);">✗ ${data.error || 'Pairing failed'}</span>`;
+                    setTimeout(() => {
+                        document.getElementById('pairingResult').style.display = 'none';
+                        document.getElementById('pairingPinEntry').style.display = 'block';
+                        document.getElementById('pairingPinInput').value = '';
+                        document.getElementById('pairingPinInput').focus();
+                    }, 2000);
+                }
+            } catch (err) {
+                showPairingError('Error: ' + err.message);
+            }
+        }
+        
+        function showPairingError(message) {
+            document.getElementById('pairingProgress').style.display = 'none';
+            document.getElementById('pairingResult').style.display = 'block';
+            document.getElementById('pairingResultText').innerHTML = 
+                `<span style="color: var(--error);">✗ ${message}</span>`;
+        }
+        
+        function showPairingSuccess(message) {
+            document.getElementById('pairingResult').style.display = 'block';
+            document.getElementById('pairingResultText').innerHTML = 
+                `<span style="color: var(--success);">✓ ${message}</span>`;
+        }
+        
+        // Handle Enter key in pairing PIN input
+        document.getElementById('pairingPinInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                submitPairingPin();
+            }
+        });
+        
+        // =====================================================
+        // Debug Log Functions
+        // =====================================================
+        
+        let debugRefreshInterval = null;
+        
+        async function refreshDebugLogs() {
+            const filter = document.getElementById('debugFilter').value;
+            const url = filter ? `/api/debug/logs?category=${filter}` : '/api/debug/logs';
+            
+            try {
+                const resp = await fetch(url);
+                const data = await resp.json();
+                renderDebugLogs(data.entries);
+            } catch (e) {
+                console.error('Failed to load debug logs:', e);
+            }
+        }
+        
+        function renderDebugLogs(entries) {
+            const container = document.getElementById('debugLogContainer');
+            const showPolling = document.getElementById('debugShowPolling').checked;
+            
+            // Filter out polling entries unless checkbox is checked
+            if (!showPolling) {
+                entries = entries.filter(e => e.category !== 'polling');
+            }
+            
+            if (!entries || entries.length === 0) {
+                container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📋</div><p>No log entries yet</p></div>';
+                return;
+            }
+            
+            container.innerHTML = entries.map(e => {
+                const time = new Date(e.timestamp).toLocaleTimeString();
+                return `
+                    <div class="log-entry log-level-${e.level}">
+                        <span class="log-time">${time}</span>
+                        <span class="log-category ${e.category}">${e.category}</span>
+                        <div class="log-content">
+                            <div class="log-action">${e.action}</div>
+                            ${e.details ? `<div class="log-details">${e.details}</div>` : ''}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        async function clearDebugLogs() {
+            try {
+                await fetch('/api/debug/clear', { method: 'POST' });
+                refreshDebugLogs();
+                showToast('Logs cleared', 'success');
+            } catch (e) {
+                showToast('Failed to clear logs', 'error');
+            }
+        }
+        
+        function startDebugAutoRefresh() {
+            if (debugRefreshInterval) return;
+            debugRefreshInterval = setInterval(() => {
+                const debugSection = document.getElementById('debugSection');
+                if (document.getElementById('debugAutoRefresh').checked && 
+                    debugSection && debugSection.style.display !== 'none') {
+                    refreshDebugLogs();
+                }
+            }, 3000);
+        }
+        
+        // Start auto-refresh when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            startDebugAutoRefresh();
+        });
+        
+        async function probeIP(ip) {
+            try {
+                showToast('Probing ' + ip + '...', 'success');
+                const resp = await fetch('/api/discover/probe', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ip: ip })
+                });
+                const data = await resp.json();
+                if (data.devices && data.devices.length > 0) {
+                    renderDiscoveredDevices(data.devices);
+                    showToast('Found ' + data.devices.length + ' integration(s)', 'success');
+                } else {
+                    showToast('No known integrations found at ' + ip, 'error');
+                }
+            } catch (e) {
+                showToast('Probe error: ' + e.message, 'error');
+            }
+        }
+    </script>
+</body>
+</html>

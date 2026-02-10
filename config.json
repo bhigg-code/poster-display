@@ -1,0 +1,29 @@
+{
+  "atlona": {
+    "name": "Atlona Matrix",
+    "host": "",
+    "port": 23,
+    "media_room_output": 1,
+    "enabled": false
+  },
+  "inputs": {},
+  "kaleidescape": {
+    "name": "Kaleidescape",
+    "host": "",
+    "port": 10000,
+    "enabled": false
+  },
+  "plex": {
+    "name": "Plex Server",
+    "host": "",
+    "port": 32400,
+    "token": "",
+    "libraries": [],
+    "enabled": false
+  },
+  "display": {
+    "coming_soon_interval": 15,
+    "poll_interval": 3,
+    "orientation": "portrait"
+  }
+}
