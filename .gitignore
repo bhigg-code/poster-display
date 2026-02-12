@@ -5,3 +5,4 @@ venv/
 .env
 *.log
 backup-pi/
+config.json

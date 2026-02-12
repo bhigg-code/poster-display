@@ -4,7 +4,10 @@
     "host": "",
     "port": 23,
     "media_room_output": 1,
-    "enabled": false
+    "enabled": false,
+    "use_broker": false,
+    "broker_host": "localhost",
+    "broker_port": 2323
   },
   "inputs": {},
   "kaleidescape": {
