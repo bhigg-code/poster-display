@@ -13,7 +13,7 @@ Features:
 - Simple TCP interface for clients
 
 Usage:
-    Server: python atlona_broker.py --host 192.168.1.111 --port 23 --listen-port 2323
+    Server: python atlona_broker.py --host <ATLONA_IP> --port 23 --listen-port 2323
     Client: echo "Status" | nc localhost 2323
 
 Protocol:

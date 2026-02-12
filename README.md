@@ -1,5 +1,7 @@
 # Movie Poster Display
 
+**Version 1.2.0**
+
 A Raspberry Pi-powered movie poster display for home theaters. Shows what's currently playing on your media sources with a theater-style aesthetic.
 
 ## Features
@@ -15,7 +17,9 @@ A Raspberry Pi-powered movie poster display for home theaters. Shows what's curr
 
 - **Smart Source Detection**: Monitors Atlona matrix switcher to detect which source is active
 
-- **Web Admin UI**: Configure integrations and inputs via browser
+- **Atlona Broker Service**: Multiplexes Atlona connections to avoid connection limits
+
+- **Mobile-Friendly Admin UI**: Configure integrations via browser on any device
 
 ## Hardware Requirements
 
@@ -26,25 +30,24 @@ A Raspberry Pi-powered movie poster display for home theaters. Shows what's curr
 
 ## Supported Integrations
 
-- **Atlona Matrix Switcher** - Source routing detection
-- **Kaleidescape** - Movie playback with poster/progress
-- **Plex Media Server** - Library for "Coming Soon" posters
-- **Nvidia Shield** - ADB-based app detection
-- **Apple TV** - Media detection via pyatv
+| Integration | Purpose |
+|-------------|---------|
+| **Atlona Matrix Switcher** | Source routing detection |
+| **Kaleidescape** | Movie playback with poster/progress |
+| **Plex Media Server** | Library for "Coming Soon" posters |
+| **Nvidia Shield** | ADB-based media detection |
+| **Apple TV** | Media detection via pyatv |
 
 ## Installation
 
-1. Flash Raspberry Pi OS (with Desktop) to your SD card
-2. Enable SSH and configure WiFi
-3. Boot the Pi and SSH in
-4. Clone this project:
+### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/yourusername/poster-display.git
+git clone https://github.com/bhigg-code/poster-display.git
 cd poster-display
 ```
 
-5. Create virtual environment and install dependencies:
+### 2. Create Virtual Environment
 
 ```bash
 python3 -m venv venv
@@ -52,7 +55,22 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-6. Set up the systemd service:
+### 3. Create Configuration
+
+```bash
+cp config.json.example config.json
+```
+
+### 4. Start the Server
+
+```bash
+cd backend
+python server.py
+```
+
+The server runs on `http://localhost:8080`
+
+### 5. (Optional) Set Up Systemd Service
 
 ```bash
 sudo cp scripts/poster-display.service /etc/systemd/system/
@@ -61,49 +79,68 @@ sudo systemctl enable poster-display
 sudo systemctl start poster-display
 ```
 
-7. Configure via the Admin UI at `http://<pi-ip>:8080/admin`
-
 ## Configuration
 
-All configuration is done through the **Admin UI** at `http://<pi-ip>:8080/admin`:
+All configuration is done through the **Admin UI** at `http://<host>:8080/admin.html`:
 
-1. **Network Discovery** - Scan your network to find devices
-2. **Integrations** - View and manage connected devices
-3. **Configurations** - Edit device settings and input mappings
-4. **Debug** - View real-time logs
+1. **Integrations** - View and manage connected devices
+2. **Network Discovery** - Scan your network to find devices
+3. **Settings** - Configure display timing and system options
 
-Configuration is stored in `config.json` and persists across restarts.
+Configuration is stored in `config.json` (gitignored for security).
+
+### Atlona Broker (Recommended)
+
+If multiple services need to access your Atlona matrix switcher, use the broker to avoid connection limit issues:
+
+```bash
+# Start the broker
+python backend/atlona_broker.py --host <ATLONA_IP> --port 23 --listen-port 2323
+
+# In Admin UI, enable "Use Broker" and set broker host/port
+```
 
 ## Architecture
 
 ```
 ┌─────────────────────────────────────────┐
-│  Frontend (Chromium Kiosk)              │
+│  Frontend (Browser/Kiosk)               │
 │  - Full-screen movie poster             │
 │  - Progress bar with time remaining     │
 │  - Theater-style gold/black theme       │
 └─────────────────────────────────────────┘
-              ▲ HTTP (localhost:8080)
+              ▲ HTTP (:8080)
               │
 ┌─────────────────────────────────────────┐
 │  Backend (Python/aiohttp)               │
 │  - Polls Atlona for routing status      │
 │  - Queries Kaleidescape for now-playing │
-│  - Queries Plex for Shield sessions     │
-│  - Queries Apple TV for media state     │
+│  - Queries Plex for sessions            │
+│  - Queries Apple TV via pyatv           │
 │  - Serves poster URLs and progress      │
+└─────────────────────────────────────────┘
+              ▲ (optional)
+              │
+┌─────────────────────────────────────────┐
+│  Atlona Broker (atlona_broker.py)       │
+│  - Single persistent Atlona connection  │
+│  - Multiplexes requests from clients    │
 └─────────────────────────────────────────┘
 ```
 
 ## API Endpoints
 
-- `GET /` - Frontend display
-- `GET /admin` - Admin configuration UI
-- `GET /api/state` - Current display state (JSON)
-- `GET /api/config` - Get configuration
-- `POST /api/config/{section}` - Update configuration section
-- `POST /api/discover/scan` - Start network discovery
-- `GET /api/discover/status` - Get discovery status
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/` | GET | Frontend display |
+| `/admin.html` | GET | Admin configuration UI |
+| `/api/state` | GET | Current display state |
+| `/api/config` | GET | Get configuration |
+| `/api/config/{section}` | POST | Update configuration |
+| `/api/integrations/status` | GET | Integration health check |
+| `/api/discover/scan` | POST | Start network discovery |
+| `/api/discover/status` | GET | Discovery progress |
+| `/api/version` | GET | Server version |
 
 ## Service Management
 
@@ -118,38 +155,48 @@ journalctl -u poster-display -f
 sudo systemctl restart poster-display
 ```
 
-## Customization
+## Security Notes
 
-### Display Orientation
-
-The display is configured for portrait (1080x1920). To change:
-
-1. Edit kiosk script and modify window size
-2. Adjust CSS in `frontend/static/style.css`
-
-### Theme
-
-Modify `frontend/static/style.css` to customize:
-- Colors (gold accent, background)
-- Fonts
-- Poster frame style
-- Progress bar appearance
+- `config.json` is gitignored (contains Plex tokens)
+- Use `config.json.example` as a template
+- Plex tokens are masked in API responses
+- Admin UI has input validation
+- See `SECURITY_SCAN.md` for full audit
 
 ## Troubleshooting
 
 ### Poster not updating
 - Check backend logs: `journalctl -u poster-display -f`
-- Verify network connectivity to your devices
-- Check `/api/state` endpoint in browser
+- Verify network connectivity to devices
+- Check Debug tab in Admin UI
 
-### Black screen
-- Ensure backend is running: `systemctl status poster-display`
-- Check if Chromium started: `ps aux | grep chromium`
+### Atlona "No connections available"
+- Enable broker mode in Admin UI
+- Or restart the Atlona to clear stale connections
 
 ### Device not detected
-- Use the Admin UI Network Discovery to scan for devices
-- Check the Debug tab for connection errors
-- Verify the device IP is reachable from the Pi
+- Use Network Discovery in Admin UI
+- Check Debug tab for connection errors
+- Verify device IP is reachable
+
+## Changelog
+
+### v1.2.0
+- Added Atlona broker service for connection multiplexing
+- Added broker configuration to Admin UI
+- Mobile-friendly admin interface
+- Security hardening (input validation, XSS protection)
+- Added security scan report
+
+### v1.1.0
+- Added Apple TV support via pyatv
+- Network discovery improvements
+- Admin UI enhancements
+
+### v1.0.0
+- Initial release
+- Kaleidescape, Plex, Shield support
+- Web-based admin UI
 
 ---
 
