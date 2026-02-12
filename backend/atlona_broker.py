@@ -196,6 +196,26 @@ class AtlonaBroker:
                     return False, "Not connected to Atlona"
             
             try:
+                # Clear any pending data in the buffer first
+                try:
+                    self._reader._buffer.clear()
+                except:
+                    pass
+                
+                # Also try to read and discard any pending data
+                try:
+                    while True:
+                        data = await asyncio.wait_for(
+                            self._reader.read(4096),
+                            timeout=0.1
+                        )
+                        if not data:
+                            break
+                except asyncio.TimeoutError:
+                    pass  # No pending data, good
+                except:
+                    pass
+                
                 # Send command
                 cmd = command.strip()
                 if not cmd.endswith('\r\n'):
@@ -203,6 +223,9 @@ class AtlonaBroker:
                 
                 self._writer.write(cmd.encode())
                 await self._writer.drain()
+                
+                # Small delay to let Atlona process and respond
+                await asyncio.sleep(0.3)
                 
                 # Read response
                 response = ""
