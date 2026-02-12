@@ -1,0 +1,20 @@
+[Unit]
+Description=Atlona Telnet Broker Service
+After=network.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=bhigginb
+WorkingDirectory=/home/bhigginb/poster-display
+ExecStart=/home/bhigginb/poster-display/venv/bin/python backend/atlona_broker.py --host ATLONA_IP --port 23 --listen-port 2323
+Restart=always
+RestartSec=5
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=atlona-broker
+
+[Install]
+WantedBy=multi-user.target

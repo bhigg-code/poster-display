@@ -16,6 +16,9 @@ DEFAULT_CONFIG = {
         "port": 23,
         "media_room_output": 1,
         "enabled": False,
+        "use_broker": False,
+        "broker_host": "localhost",
+        "broker_port": 2323,
     },
     "inputs": {},
     "kaleidescape": {
@@ -129,6 +132,18 @@ class ConfigManager:
     @property
     def atlona_port(self) -> int:
         return self._config.get("atlona", {}).get("port", 23)
+    
+    @property
+    def atlona_use_broker(self) -> bool:
+        return self._config.get("atlona", {}).get("use_broker", False)
+    
+    @property
+    def atlona_broker_host(self) -> str:
+        return self._config.get("atlona", {}).get("broker_host", "localhost")
+    
+    @property
+    def atlona_broker_port(self) -> int:
+        return self._config.get("atlona", {}).get("broker_port", 2323)
     
     @property
     def media_room_output(self) -> int:

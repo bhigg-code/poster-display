@@ -16,7 +16,7 @@ from typing import Optional
 from aiohttp import web
 
 # Version
-VERSION = "1.1.12"
+VERSION = "1.2.0"
 
 # =============================================================================
 # Input Validation
@@ -153,7 +153,13 @@ class PosterDisplayServer:
     
     def _init_clients(self):
         """Initialize or reinitialize clients from config."""
-        self.atlona = AtlonaMatrix(config.atlona_host, config.atlona_port)
+        self.atlona = AtlonaMatrix(
+            config.atlona_host, 
+            config.atlona_port,
+            use_broker=config.atlona_use_broker,
+            broker_host=config.atlona_broker_host,
+            broker_port=config.atlona_broker_port
+        )
         self.kaleidescape = KaleidescapeClient(config.kaleidescape_host, config.kaleidescape_port)
         self.plex = PlexClient(config.plex_host, config.plex_port, config.plex_token)
         self._init_shield_clients()
