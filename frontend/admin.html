@@ -1029,7 +1029,7 @@
     
     <!-- Atlona Config Modal -->
     <div class="modal-overlay" id="atlonaModal">
-        <div class="modal">
+        <div class="modal" style="max-width: 500px;">
             <h3>🔀 Configure Atlona Matrix</h3>
             <p style="color: var(--text-muted); margin-bottom: 20px; font-size: 0.9rem;">
                 Found at <strong id="atlonaModalIp"></strong>
@@ -1051,9 +1051,34 @@
                     <label>Poll Interval (seconds)</label>
                     <input type="number" id="atlonaModalPollInterval" value="15" min="5" max="60">
                 </div>
+                
+                <!-- Broker Settings -->
+                <div class="form-group full-width" style="flex-direction: row; align-items: center; gap: 12px; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border);">
+                    <input type="checkbox" id="atlonaModalUseBroker" style="width: auto;" onchange="toggleBrokerFields()">
+                    <label for="atlonaModalUseBroker" style="text-transform: none; cursor: pointer;">
+                        Use MQTT Broker (recommended for multiple services)
+                    </label>
+                </div>
+                <div id="atlonaModalBrokerFields" style="display: none; grid-column: 1 / -1;">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Broker Host</label>
+                            <input type="text" id="atlonaModalBrokerHost" placeholder="localhost" value="localhost">
+                        </div>
+                        <div class="form-group">
+                            <label>Broker Port</label>
+                            <input type="number" id="atlonaModalBrokerPort" value="2323">
+                        </div>
+                    </div>
+                    <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 8px;">
+                        The broker maintains a single connection to the Atlona to avoid connection limit issues.
+                        Run <code style="background: var(--input-bg); padding: 2px 6px; border-radius: 4px;">atlona_broker.py</code> on the broker host.
+                    </p>
+                </div>
+                
                 <div class="modal-actions">
                     <button type="button" class="btn btn-secondary" onclick="hideAtlonaModal()">Cancel</button>
-                    <button type="submit" class="btn">Add Atlona</button>
+                    <button type="submit" class="btn" id="atlonaModalSaveBtn">Add Atlona</button>
                 </div>
             </form>
         </div>
@@ -1578,7 +1603,14 @@
             
             container.innerHTML = integrations.map(i => {
                 let statusLine = i.verified ? '✓ Verified & Online' : '✗ Offline or Unreachable';
-                if (i.type === 'appletv') {
+                if (i.type === 'atlona') {
+                    const useBroker = config.atlona?.use_broker;
+                    if (useBroker) {
+                        statusLine = i.verified 
+                            ? '✓ Online (via Broker)' 
+                            : '✗ Offline or Broker Unreachable';
+                    }
+                } else if (i.type === 'appletv') {
                     if (i.verified && i.paired) {
                         statusLine = '✓ Online & Paired';
                     } else if (i.verified && !i.paired) {
@@ -1679,7 +1711,7 @@
                         <span class="device-icon">${icons[i.type] || '❓'}</span>
                         <div class="device-info">
                             <div class="device-name">${escapeHtml(i.name)}${defaultBadge}${inputBadge}</div>
-                            <div class="device-details">${i.host}:${i.port} • ${i.type}</div>
+                            <div class="device-details">${i.host}:${i.port} • ${i.type}${(i.type === 'atlona' && config.atlona?.use_broker) ? ` • Broker: ${config.atlona.broker_host}:${config.atlona.broker_port}` : ''}</div>
                             <div class="${(i.verified && (i.type !== 'appletv' || i.paired)) ? 'device-verified' : 'device-unverified'}">
                                 ${statusLine}
                             </div>
@@ -2010,6 +2042,11 @@
         
         let pendingAtlonaIp = '';
         
+        function toggleBrokerFields() {
+            const useBroker = document.getElementById('atlonaModalUseBroker').checked;
+            document.getElementById('atlonaModalBrokerFields').style.display = useBroker ? 'block' : 'none';
+        }
+        
         function showAtlonaModal(ip, port, name) {
             pendingAtlonaIp = ip;
             document.getElementById('atlonaModalIp').textContent = ip;
@@ -2017,6 +2054,12 @@
             document.getElementById('atlonaModalPort').value = port || 23;
             document.getElementById('atlonaModalOutput').value = 1;
             document.getElementById('atlonaModalPollInterval').value = 15;
+            // Reset broker fields
+            document.getElementById('atlonaModalUseBroker').checked = false;
+            document.getElementById('atlonaModalBrokerHost').value = 'localhost';
+            document.getElementById('atlonaModalBrokerPort').value = 2323;
+            document.getElementById('atlonaModalBrokerFields').style.display = 'none';
+            document.getElementById('atlonaModalSaveBtn').textContent = 'Add Atlona';
             document.getElementById('atlonaModal').classList.add('show');
         }
         
@@ -2027,6 +2070,7 @@
         
         document.getElementById('atlonaModalForm').addEventListener('submit', async (e) => {
             e.preventDefault();
+            const useBroker = document.getElementById('atlonaModalUseBroker').checked;
             const data = {
                 name: document.getElementById('atlonaModalName').value,
                 host: pendingAtlonaIp,
@@ -2034,6 +2078,9 @@
                 media_room_output: parseInt(document.getElementById('atlonaModalOutput').value),
                 poll_interval: parseInt(document.getElementById('atlonaModalPollInterval').value),
                 enabled: true,
+                use_broker: useBroker,
+                broker_host: useBroker ? document.getElementById('atlonaModalBrokerHost').value : 'localhost',
+                broker_port: useBroker ? parseInt(document.getElementById('atlonaModalBrokerPort').value) : 2323,
             };
             
             try {
@@ -2043,13 +2090,13 @@
                     body: JSON.stringify(data),
                 });
                 if (resp.ok) {
-                    showToast('Atlona added!', 'success');
+                    showToast('Atlona saved!', 'success');
                     hideAtlonaModal();
                     loadConfig();
                     loadIntegrations();
                     pollScanStatus(); // Refresh discovery list
                 } else {
-                    showToast('Failed to add Atlona', 'error');
+                    showToast('Failed to save Atlona', 'error');
                 }
             } catch (err) {
                 showToast('Error: ' + err.message, 'error');
@@ -2064,6 +2111,13 @@
             document.getElementById('atlonaModalPort').value = config.atlona?.port || port;
             document.getElementById('atlonaModalOutput').value = config.atlona?.media_room_output || 1;
             document.getElementById('atlonaModalPollInterval').value = config.atlona?.poll_interval || 15;
+            // Broker settings
+            const useBroker = config.atlona?.use_broker || false;
+            document.getElementById('atlonaModalUseBroker').checked = useBroker;
+            document.getElementById('atlonaModalBrokerHost').value = config.atlona?.broker_host || 'localhost';
+            document.getElementById('atlonaModalBrokerPort').value = config.atlona?.broker_port || 2323;
+            document.getElementById('atlonaModalBrokerFields').style.display = useBroker ? 'block' : 'none';
+            document.getElementById('atlonaModalSaveBtn').textContent = 'Save Changes';
             document.getElementById('atlonaModal').classList.add('show');
         }
         

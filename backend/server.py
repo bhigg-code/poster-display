@@ -1238,17 +1238,34 @@ async def handle_integrations_status(request):
     
     # Atlona
     if config.atlona_host:
-        debug_log.log("integration", f"Verifying Atlona", f"Host: {config.atlona_host}")
-        device = await discovery.probe_atlona(config.atlona_host, log_details=True)
-        status = "Online" if device else "Offline"
-        debug_log.log("integration", f"Atlona status: {status}", config.atlona_host, "success" if device else "warning")
+        use_broker = config.atlona_use_broker
+        verified = False
+        
+        if use_broker:
+            # Verify via broker
+            debug_log.log("integration", f"Verifying Atlona via broker", f"Broker: {config.atlona_broker_host}:{config.atlona_broker_port}")
+            if server and server.atlona:
+                verified = await server.atlona.check_broker_available()
+            status = "Online (via broker)" if verified else "Broker Offline"
+        else:
+            # Direct verification
+            debug_log.log("integration", f"Verifying Atlona", f"Host: {config.atlona_host}")
+            device = await discovery.probe_atlona(config.atlona_host, log_details=True)
+            verified = device is not None
+            status = "Online" if verified else "Offline"
+        
+        debug_log.log("integration", f"Atlona status: {status}", config.atlona_host, "success" if verified else "warning")
         integrations.append({
             "type": "atlona",
             "name": config._config.get("atlona", {}).get("name", "Atlona Matrix"),
             "host": config.atlona_host,
             "port": config.atlona_port,
-            "verified": device is not None,
+            "verified": verified,
             "configured": True,
+            "media_room_output": config.media_room_output,
+            "use_broker": use_broker,
+            "broker_host": config.atlona_broker_host if use_broker else None,
+            "broker_port": config.atlona_broker_port if use_broker else None,
         })
     
     # Kaleidescape
