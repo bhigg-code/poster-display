@@ -1,6 +1,7 @@
 """Apple TV client for media detection via pyatv."""
 
 import asyncio
+import time
 from dataclasses import dataclass
 from typing import Optional, Callable
 import os
@@ -37,6 +38,10 @@ LogCallback = Callable[[str, str, str, str], None]
 class AppleTVClient:
     """Client for connecting to and monitoring Apple TV."""
     
+    # Connection retry settings
+    MAX_CONSECUTIVE_FAILURES = 3
+    RESCAN_COOLDOWN_SECONDS = 30  # Don't rescan more than once per 30 seconds
+    
     def __init__(self, host: str, name: str = "Apple TV"):
         self.host = host
         self.name = name
@@ -44,6 +49,9 @@ class AppleTVClient:
         self._config = None
         self._log_callback: Optional[LogCallback] = None
         self._credentials_dir = os.path.expanduser("~/.pyatv")
+        # Auto-reconnect tracking
+        self._consecutive_failures = 0
+        self._last_rescan_time = 0
         
     def set_logger(self, callback: LogCallback):
         """Set logging callback."""
@@ -59,6 +67,22 @@ class AppleTVClient:
     def is_available(self) -> bool:
         """Check if pyatv is installed."""
         return PYATV_AVAILABLE
+    
+    def _should_rescan(self) -> bool:
+        """Check if we should rescan based on failure count and cooldown."""
+        if self._consecutive_failures < self.MAX_CONSECUTIVE_FAILURES:
+            return False
+        time_since_last = time.time() - self._last_rescan_time
+        return time_since_last >= self.RESCAN_COOLDOWN_SECONDS
+    
+    async def force_rescan(self) -> bool:
+        """Force a rescan of the Apple TV, clearing cached config."""
+        self._log("Force rescan", f"Refreshing connection to {self.host}")
+        await self.disconnect()
+        self._config = None
+        self._consecutive_failures = 0
+        self._last_rescan_time = time.time()
+        return await self.scan_for_device()
     
     async def scan_for_device(self) -> bool:
         """Scan for the Apple TV and get its configuration with credentials from storage."""
@@ -89,6 +113,7 @@ class AppleTVClient:
             
             self._config = atvs[0]
             self.name = self._config.name
+            self._last_rescan_time = time.time()
             
             # Check if credentials were loaded
             companion = self._config.get_service(Protocol.Companion)
@@ -117,10 +142,12 @@ class AppleTVClient:
             self._log(f"Connecting to {self.name}", self.host)
             self._atv = await pyatv.connect(self._config, asyncio.get_event_loop())
             self._log(f"Connected to {self.name}", "Ready", "success")
+            self._consecutive_failures = 0  # Reset on successful connect
             return True
         except Exception as e:
             self._log(f"Connection failed", str(e), "error")
             self._atv = None
+            self._consecutive_failures += 1
             return False
     
     async def disconnect(self):
@@ -131,17 +158,26 @@ class AppleTVClient:
             self._log(f"Disconnected from {self.name}")
     
     async def get_playing(self) -> Optional[AppleTVMedia]:
-        """Get currently playing media."""
+        """Get currently playing media with auto-reconnect on failure."""
         if not PYATV_AVAILABLE:
             return None
             
         # Connect if needed
         if not self._atv:
+            # Check if we should rescan due to repeated failures
+            if self._should_rescan():
+                self._log("Auto-rescan triggered", f"After {self._consecutive_failures} failures", "warning")
+                if not await self.force_rescan():
+                    return None
+            
             if not await self.connect():
                 return None
         
         try:
             playing = await self._atv.metadata.playing()
+            
+            # Reset failure count on success
+            self._consecutive_failures = 0
             
             # Map media type
             media_type_map = {
@@ -198,8 +234,15 @@ class AppleTVClient:
             
         except Exception as e:
             self._log(f"Failed to get playing status", str(e), "error")
+            self._consecutive_failures += 1
+            
             # Reset connection on error
             await self.disconnect()
+            
+            # If we've hit the threshold, try a rescan on next attempt
+            if self._should_rescan():
+                self._log("Will rescan on next attempt", f"Failures: {self._consecutive_failures}", "warning")
+            
             return None
     
     async def is_playing(self) -> bool:
@@ -287,7 +330,6 @@ class AppleTVClient:
                 try:
                     from pyatv.storage.file_storage import FileStorage
                     import json
-                    import os
                     
                     loop = asyncio.get_running_loop()
                     storage = FileStorage.default_storage(loop)
