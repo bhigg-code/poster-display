@@ -324,7 +324,7 @@ class PosterDisplayServer:
         if default_display == "kaleidescape" and config.kaleidescape_enabled:
             debug_log.log("polling", "Kaleidescape", "Querying now playing (direct)")
             movie = await self.kaleidescape.get_now_playing()
-            if movie and movie.title:
+            if movie and movie.title and movie.is_playing:
                 debug_log.log("polling", "Kaleidescape", f"Playing: {movie.title} ({movie.play_status})", "success")
                 self.current_state = DisplayState(
                     mode=DisplayMode.KALEIDESCAPE,
@@ -499,7 +499,7 @@ class PosterDisplayServer:
         if kscape_input and current_input == kscape_input:
             debug_log.log("polling", "Kaleidescape", f"Querying now playing (input {current_input})")
             movie = await self.kaleidescape.get_now_playing()
-            if movie and movie.title:
+            if movie and movie.title and movie.is_playing:
                 debug_log.log("polling", "Kaleidescape", f"Playing: {movie.title} ({movie.play_status})", "success")
                 self.current_state = DisplayState(
                     mode=DisplayMode.KALEIDESCAPE,
@@ -1281,7 +1281,7 @@ async def handle_integrations_status(request):
         if server and server.kaleidescape:
             try:
                 movie = await server.kaleidescape.get_now_playing()
-                if movie and movie.title:
+                if movie and movie.title and movie.is_playing:
                     if movie.is_playing:
                         now_playing = movie.title
                         playback_state = "playing"
