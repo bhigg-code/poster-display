@@ -26,8 +26,8 @@ class PlexClient:
     """Plex server client."""
     
     # High-res poster dimensions (portrait 2:3 aspect ratio)
-    POSTER_WIDTH = 1000
-    POSTER_HEIGHT = 1500
+    POSTER_WIDTH = 2000
+    POSTER_HEIGHT = 3000
     
     def __init__(self, host: str, port: int, token: str):
         self.base_url = f"http://{host}:{port}"
