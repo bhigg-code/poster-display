@@ -56,7 +56,7 @@ class PosterLookup:
         """Get season poster URL."""
         season_data = await self._api_get(f'/tv/{show_id}/season/{season_num}')
         if season_data and season_data.get('poster_path'):
-            return f"{self.TMDB_IMAGE_BASE}/w500{season_data['poster_path']}"
+            return f"{self.TMDB_IMAGE_BASE}/original{season_data['poster_path']}"
         return None
     
     async def find_episode(self, show_id: int, episode_title: str) -> Optional[dict]:
@@ -115,12 +115,12 @@ class PosterLookup:
         # Get episode still (landscape image from the episode)
         episode_still = None
         if episode.get('still_path'):
-            episode_still = f"{self.TMDB_IMAGE_BASE}/w780{episode['still_path']}"
+            episode_still = f"{self.TMDB_IMAGE_BASE}/original{episode['still_path']}"
         
         # Get season poster (portrait poster for the season)
         season_poster = None
         if episode.get('season_poster_path'):
-            season_poster = f"{self.TMDB_IMAGE_BASE}/w500{episode['season_poster_path']}"
+            season_poster = f"{self.TMDB_IMAGE_BASE}/original{episode['season_poster_path']}"
         
         # Build description
         description = episode.get('overview', '')
@@ -137,7 +137,7 @@ class PosterLookup:
         
         show_data = await self._api_get(f'/tv/{show_id}')
         if show_data and show_data.get('poster_path'):
-            return f"{self.TMDB_IMAGE_BASE}/w500{show_data['poster_path']}"
+            return f"{self.TMDB_IMAGE_BASE}/original{show_data['poster_path']}"
         return None
     
     async def search_movie(self, title: str, year: str = None) -> Tuple[Optional[str], Optional[str]]:
@@ -154,7 +154,7 @@ class PosterLookup:
             movie = data['results'][0]
             poster_url = None
             if movie.get('poster_path'):
-                poster_url = f"{self.TMDB_IMAGE_BASE}/w500{movie['poster_path']}"
+                poster_url = f"{self.TMDB_IMAGE_BASE}/original{movie['poster_path']}"
             return poster_url, movie.get('overview', '')
         return None, None
     
