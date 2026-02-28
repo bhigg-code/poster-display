@@ -214,16 +214,61 @@ class PosterDisplayServer:
         await self.kaleidescape.disconnect()
     
     async def _refresh_coming_soon(self):
-        """Refresh the list of 'Coming Soon' movies."""
+        """Refresh the list of 'Coming Soon' movies with quality check."""
         libraries = config.plex_libraries
         if not libraries:
             libraries = ["Movies"]
         
         movies = await self.plex.get_random_movies(libraries, count=30)
         if movies:
-            random.shuffle(movies)
-            self.coming_soon_movies = movies
-            print(f"Loaded {len(movies)} movies for 'Coming Soon' rotation")
+            # Check poster quality and get TMDB fallbacks for low-res ones
+            enhanced_movies = []
+            for movie in movies:
+                enhanced_movie = await self._ensure_quality_poster(movie)
+                enhanced_movies.append(enhanced_movie)
+            
+            random.shuffle(enhanced_movies)
+            self.coming_soon_movies = enhanced_movies
+            print(f"Loaded {len(enhanced_movies)} movies for 'Coming Soon' rotation")
+    
+    async def _ensure_quality_poster(self, movie):
+        """Check poster quality and get TMDB fallback if needed."""
+        MIN_POSTER_WIDTH = 400
+        
+        if not movie.poster_url or "192.168.4.200" not in movie.poster_url:
+            return movie  # Not a Plex poster, skip check
+        
+        try:
+            # Extract thumb path from transcoded URL
+            import urllib.parse
+            parsed = urllib.parse.urlparse(movie.poster_url)
+            params = urllib.parse.parse_qs(parsed.query)
+            thumb_path = params.get('url', [''])[0]
+            
+            if thumb_path:
+                # Check raw poster size
+                width, height = await self.plex._get_raw_poster_size(thumb_path)
+                
+                if width > 0 and width < MIN_POSTER_WIDTH:
+                    print(f"Low-res poster ({width}x{height}) for {movie.title}, fetching TMDB")
+                    tmdb_url = await self.plex._get_tmdb_poster(movie.title, movie.year)
+                    if tmdb_url:
+                        # Create new movie with TMDB poster
+                        from plex_client import PlexMovie
+                        return PlexMovie(
+                            title=movie.title,
+                            year=movie.year,
+                            poster_url=tmdb_url,
+                            duration_ms=movie.duration_ms,
+                            position_ms=movie.position_ms,
+                            player_name=movie.player_name,
+                            rating_key=movie.rating_key,
+                            synopsis=movie.synopsis,
+                        )
+        except Exception as e:
+            print(f"Poster quality check error for {movie.title}: {e}")
+        
+        return movie
     
     async def _poll_loop(self):
         """Main polling loop to check sources."""

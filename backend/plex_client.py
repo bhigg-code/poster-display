@@ -28,6 +28,7 @@ class PlexClient:
     # High-res poster dimensions (portrait 2:3 aspect ratio)
     POSTER_WIDTH = 2000
     POSTER_HEIGHT = 3000
+    MIN_SOURCE_WIDTH = 400  # Minimum acceptable source poster width
     
     def __init__(self, host: str, port: int, token: str):
         self.base_url = f"http://{host}:{port}"
@@ -51,6 +52,69 @@ class PlexClient:
                 f"&minSize=1&upscale=1"
                 f"&url={encoded_thumb}"
                 f"&X-Plex-Token={self.token}")
+    
+    async def _get_raw_poster_size(self, thumb_path: str) -> tuple[int, int]:
+        """Estimate poster quality using file size (no PIL dependency)."""
+        if not thumb_path:
+            return (0, 0)
+        try:
+            url = f"{self.base_url}{thumb_path}?X-Plex-Token={self.token}"
+            async with aiohttp.ClientSession() as session:
+                async with session.head(url, timeout=aiohttp.ClientTimeout(total=3)) as resp:
+                    if resp.status == 200:
+                        content_length = int(resp.headers.get("Content-Length", 0))
+                        if content_length < 15000:
+                            return (100, 150)
+                        elif content_length < 50000:
+                            return (300, 450)
+                        else:
+                            return (800, 1200)
+        except Exception as e:
+            print(f"Error checking poster size: {e}")
+        return (800, 1200)
+        try:
+            url = f"{self.base_url}{thumb_path}?X-Plex-Token={self.token}"
+            async with aiohttp.ClientSession() as session:
+                async with session.get(url, timeout=aiohttp.ClientTimeout(total=5)) as resp:
+                    if resp.status == 200:
+                        data = await resp.read()
+                        # Parse JPEG/PNG header for dimensions
+                        from io import BytesIO
+                        from PIL import Image
+                        img = Image.open(BytesIO(data))
+                        return img.size
+        except Exception as e:
+            print(f"Error checking poster size: {e}")
+        return (0, 0)
+    
+    async def _get_tmdb_poster(self, title: str, year: str = None) -> str:
+        """Fetch high-res poster from TMDB as fallback."""
+        try:
+            from poster_lookup import poster_lookup
+            poster_url, _ = await poster_lookup.search_movie(title, year)
+            if poster_url:
+                print(f"Using TMDB poster for {title} ({year})")
+                return poster_url
+        except Exception as e:
+            print(f"TMDB fallback error: {e}")
+        return ""
+    
+    async def _smart_poster_url(self, thumb_path: str, title: str, year: str = None) -> str:
+        """Get poster URL, falling back to TMDB if Plex source is low-res."""
+        if not thumb_path:
+            return await self._get_tmdb_poster(title, year) or ""
+        
+        # Check raw poster resolution
+        width, height = await self._get_raw_poster_size(thumb_path)
+        
+        if width < self.MIN_SOURCE_WIDTH:
+            print(f"Low-res Plex poster for {title}: {width}x{height}, trying TMDB")
+            tmdb_url = await self._get_tmdb_poster(title, year)
+            if tmdb_url:
+                return tmdb_url
+        
+        # Use Plex transcoded poster
+        return self._poster_url(thumb_path)
     
     async def _get(self, path: str) -> Optional[ET.Element]:
         """Make GET request and parse XML response."""
