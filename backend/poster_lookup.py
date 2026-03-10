@@ -1,6 +1,7 @@
 """External poster lookup service using TMDB, YouTube, etc."""
 
 import asyncio
+import os
 import re
 from typing import Optional, Tuple
 from urllib.parse import quote, parse_qs, urlparse
@@ -11,7 +12,7 @@ import aiohttp
 class PosterLookup:
     """Looks up TV show/movie posters and episode stills from TMDB."""
     
-    TMDB_API_KEY = '8265bd1679663a7ea12ac168da84d2e8'  # Public demo key
+    TMDB_API_KEY = os.environ.get('TMDB_API_KEY', '')
     TMDB_BASE = 'https://api.themoviedb.org/3'
     TMDB_IMAGE_BASE = 'https://image.tmdb.org/t/p'
     

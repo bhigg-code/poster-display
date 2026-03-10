@@ -235,7 +235,8 @@ class PosterDisplayServer:
         """Check poster quality and get TMDB fallback if needed."""
         MIN_POSTER_WIDTH = 400
         
-        if not movie.poster_url or "192.168.4.200" not in movie.poster_url:
+        plex_host = os.environ.get('PLEX_HOST', '')
+        if not movie.poster_url or (plex_host and plex_host not in movie.poster_url):
             return movie  # Not a Plex poster, skip check
         
         try:

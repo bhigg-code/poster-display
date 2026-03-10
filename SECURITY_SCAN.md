@@ -52,7 +52,7 @@ ET.fromstring(text)  # Parsing Plex API XML response
 
 ### 5. TMDB API Key
 **File:** `backend/poster_lookup.py`  
-**Code:** `TMDB_API_KEY = '8265bd1679663a7ea12ac168da84d2e8'`  
+**Code:** `TMDB_API_KEY = '***REDACTED***'`  
 **Mitigation:**
 - This is TMDB's public demo/sample key
 - Used only for poster metadata lookup
