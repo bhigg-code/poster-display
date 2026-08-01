@@ -562,11 +562,17 @@ class PosterDisplayServer:
                 )
                 return
         
+
         # Check if a Plex input is selected
         plex_inputs = config.plex_inputs
         if current_input in plex_inputs:
-            debug_log.log("polling", "Plex", f"Querying active sessions (input {current_input})")
-            session = await self.plex.get_shield_session()
+            # Skip the Plex-session query for Apple TV inputs: no Plex player lives on the
+            # Apple TV, so get_shield_session() just knocks on the wrong host (log spam +
+            # ~9s delay). Go straight to the device-specific (pyatv) path below.
+            session = None
+            if current_input not in self.appletv_clients:
+                debug_log.log("polling", "Plex", f"Querying active sessions (input {current_input})")
+                session = await self.plex.get_shield_session()
             if session:
                 debug_log.log("polling", "Plex", f"Playing: {session.title} on {session.player_name}", "success")
                 self.current_state = DisplayState(

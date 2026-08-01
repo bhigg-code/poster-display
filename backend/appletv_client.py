@@ -140,7 +140,19 @@ class AppleTVClient:
         
         try:
             self._log(f"Connecting to {self.name}", self.host)
-            self._atv = await pyatv.connect(self._config, asyncio.get_event_loop())
+            # Load stored pairing credentials so protected protocols (Companion/AirPlay)
+            # authenticate; without storage, connect is credential-less and metadata is empty.
+            storage = None
+            try:
+                from pyatv.storage.file_storage import FileStorage
+                storage = FileStorage.default_storage(asyncio.get_event_loop())
+                await storage.load()
+            except Exception as _stor_err:
+                self._log("Could not load storage for connect", str(_stor_err), "warning")
+            if storage is not None:
+                self._atv = await pyatv.connect(self._config, asyncio.get_event_loop(), storage=storage)
+            else:
+                self._atv = await pyatv.connect(self._config, asyncio.get_event_loop())
             self._log(f"Connected to {self.name}", "Ready", "success")
             self._consecutive_failures = 0  # Reset on successful connect
             return True
