@@ -103,6 +103,7 @@ debug_log = DebugLog()
 from atlona import AtlonaMatrix
 from config_manager import config
 from kaleidescape_client import KaleidescapeClient, KaleidescapeMovie
+from bluos_client import BluOSClient, BluOSTrack
 from plex_client import PlexClient, PlexMovie
 from shield_client import ShieldClient
 from appletv_client import AppleTVClient, AppleTVMedia, PYATV_AVAILABLE
@@ -112,6 +113,7 @@ from discovery import discovery
 
 class DisplayMode(str, Enum):
     KALEIDESCAPE = "kaleidescape"
+    BLUOS = "bluos"
     PLEX = "plex"
     COMING_SOON = "coming_soon"
     STREAMING = "streaming"
@@ -161,6 +163,14 @@ class PosterDisplayServer:
             broker_port=config.atlona_broker_port
         )
         self.kaleidescape = KaleidescapeClient(config.kaleidescape_host, config.kaleidescape_port)
+        # Init BluOS client from bluos config section
+        self.bluos_clients = {}
+        self._last_marantz_source = ""
+        if config.bluos_enabled and config.marantz_host:
+            bluos_host = self._config_get_bluos_host()
+            if bluos_host:
+                self.bluos_clients[0] = BluOSClient(bluos_host)
+                print(f"BluOS client initialized: {bluos_host}")
         self.plex = PlexClient(config.plex_host, config.plex_port, config.plex_token)
         self._init_shield_clients()
         self._init_appletv_clients()
@@ -200,9 +210,11 @@ class PosterDisplayServer:
         
         # Connect to Kaleidescape
         await self.kaleidescape.connect()
+        for client in self.bluos_clients.values():
+            await client.connect()
         
-        # Load initial coming soon movies
-        await self._refresh_coming_soon()
+        # Load initial coming soon movies in background (non-blocking)
+        asyncio.create_task(self._refresh_coming_soon())
         
         # Start background polling
         asyncio.create_task(self._poll_loop())
@@ -212,24 +224,48 @@ class PosterDisplayServer:
         """Stop the server."""
         self._running = False
         await self.kaleidescape.disconnect()
+        for client in self.bluos_clients.values():
+            await client.disconnect()
     
     async def _refresh_coming_soon(self):
-        """Refresh the list of 'Coming Soon' movies with quality check."""
-        libraries = config.plex_libraries
-        if not libraries:
-            libraries = ["Movies"]
-        
-        movies = await self.plex.get_random_movies(libraries, count=30)
-        if movies:
-            # Check poster quality and get TMDB fallbacks for low-res ones
-            enhanced_movies = []
+        """Refresh the list of 'Coming Soon' movies. Fast load first, quality upgrade in background."""
+        try:
+            libraries = config.plex_libraries
+            if not libraries:
+                libraries = ["Movies"]
+            print(f"Refreshing coming soon from Plex: {libraries}")
+            movies = await self.plex.get_random_movies(libraries, count=20)
+            if not movies:
+                print("WARNING: No movies returned from Plex")
+                return
+
+            # Load movies immediately without quality check for fast startup
+            random.shuffle(movies)
+            self.coming_soon_movies = movies
+            print(f"Loaded {len(movies)} movies for 'Coming Soon' rotation (fast load)")
+
+            # Then upgrade poster quality in background
+            asyncio.create_task(self._upgrade_poster_quality(movies))
+        except Exception as e:
+            print(f"ERROR in _refresh_coming_soon: {e}")
+
+    async def _upgrade_poster_quality(self, movies):
+        """Background task to upgrade poster quality using TMDB."""
+        try:
+            enhanced = []
             for movie in movies:
-                enhanced_movie = await self._ensure_quality_poster(movie)
-                enhanced_movies.append(enhanced_movie)
-            
-            random.shuffle(enhanced_movies)
-            self.coming_soon_movies = enhanced_movies
-            print(f"Loaded {len(enhanced_movies)} movies for 'Coming Soon' rotation")
+                try:
+                    upgraded = await asyncio.wait_for(
+                        self._ensure_quality_poster(movie), timeout=5.0
+                    )
+                    enhanced.append(upgraded)
+                except Exception:
+                    enhanced.append(movie)
+            random.shuffle(enhanced)
+            self.coming_soon_movies = enhanced
+            print(f"Poster quality upgraded for {len(enhanced)} movies")
+        except Exception as e:
+            print(f"ERROR upgrading poster quality: {e}")
     
     async def _ensure_quality_poster(self, movie):
         """Check poster quality and get TMDB fallback if needed."""
@@ -271,6 +307,48 @@ class PosterDisplayServer:
         
         return movie
     
+
+
+    def _config_get_bluos_host(self) -> str:
+        """Get BluOS host from config."""
+        import json
+        try:
+            with open('/home/bhigginb/poster-display/config.json') as f:
+                c = json.load(f)
+            return c.get('bluos', {}).get('host', '')
+        except:
+            return ''
+
+    async def _get_marantz_source(self) -> str:
+        """Query Marantz receiver via telnet for current input source."""
+        try:
+            reader, writer = await asyncio.wait_for(
+                asyncio.open_connection(config.marantz_host, 23),
+                timeout=2.0
+            )
+            writer.write(bytes([83,73,63,13]))  # b'SI?\r'
+            await writer.drain()
+            await asyncio.sleep(0.3)  # wait for Marantz to respond
+            data = await asyncio.wait_for(reader.read(256), timeout=2.0)
+            writer.close()
+            try:
+                await asyncio.wait_for(writer.wait_closed(), timeout=1.0)
+            except Exception:
+                pass
+            response = data.decode('utf-8', errors='ignore').strip()
+            # Response like 'SICD' or 'SICDSVOFF' - extract source after 'SI'
+            if response.startswith('SI'):
+                import re as _re
+                m = _re.match(r'SI([^\r\n\s]+)', response)
+                source = m.group(1) if m else ''
+                if source:
+                    self._last_marantz_source = source
+                return source
+        except Exception as e:
+            debug_log.log("polling", "Marantz", f"Telnet error: {e}", "warning")
+        # Return last known source if we got empty response
+        return self._last_marantz_source
+
     async def _poll_loop(self):
         """Main polling loop to check sources."""
         last_atlona_poll = 0
@@ -503,8 +581,8 @@ class PosterDisplayServer:
             debug_log.log("polling", "Atlona", f"Querying routing for output {config.media_room_output}")
             
             # Retry logic: 3 attempts with 3s delay between retries
-            max_retries = 3
-            retry_delay = 3
+            max_retries = 1
+            retry_delay = 5
             current_input = None
             
             for attempt in range(1, max_retries + 1):
@@ -534,13 +612,49 @@ class PosterDisplayServer:
             current_input = self._last_known_input
             using_cache = True
         
+        # Check Marantz source - if set to CD, poll BluOS regardless of Atlona input
+        if self.bluos_clients and config.bluos_enabled:
+            marantz_source = await self._get_marantz_source()
+            debug_log.log("polling", "Marantz", f"Source: {marantz_source}")
+            if marantz_source == config.bluos_marantz_source:
+                # Re-read BluOS host in case IP changed
+                current_bluos_host = self._config_get_bluos_host()
+                bluos = next(iter(self.bluos_clients.values()))
+                if current_bluos_host and bluos.host != current_bluos_host:
+                    debug_log.log("polling", "BluOS", f"IP changed: {bluos.host} → {current_bluos_host}, reconnecting")
+                    bluos.host = current_bluos_host
+                    bluos._connected = False
+                if not bluos.is_connected:
+                    await bluos.connect()
+                track = await bluos.get_status()
+                if track and track.title and track.is_playing:
+                    debug_log.log("polling", "BluOS", f"Playing: {track.title} by {track.artist}", "success")
+                    self.current_state = DisplayState(
+                        mode=DisplayMode.BLUOS,
+                        title=track.title,
+                        poster_url=track.album_art_url,
+                        duration_seconds=track.duration_seconds,
+                        position_seconds=track.position_seconds,
+                        is_playing=track.is_playing,
+                        synopsis=f"{track.artist} • {track.album}" if track.album else track.artist,
+                        source_name=f"BluOS ({track.service})" if track.service else "Bluesound",
+                        using_cached_input=False,  # BluOS is live, Atlona cache irrelevant
+                    )
+                    return
+                else:
+                    # Marantz on CD but BluOS not playing - show coming soon, skip Atlona
+                    debug_log.log("polling", "BluOS", "Marantz on CD, BluOS not playing - coming soon")
+                    if self.current_state.mode != DisplayMode.COMING_SOON:
+                        self._next_coming_soon()
+                    return
+
         if current_input is None:
             # No cached input, fall back to coming soon
             if self.current_state.mode != DisplayMode.COMING_SOON:
                 self._next_coming_soon()
             return
-        
-        # Check if Kaleidescape input is selected
+
+        # Check if Kaleidescape input is selected        # Check if Kaleidescape input is selected
         kscape_input = config.kaleidescape_input
         if kscape_input and current_input == kscape_input:
             debug_log.log("polling", "Kaleidescape", f"Querying now playing (input {current_input})")

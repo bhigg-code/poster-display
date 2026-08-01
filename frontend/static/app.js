@@ -101,6 +101,9 @@ class PosterDisplay {
         } else if (state.mode === "streaming") {
             this.headerText.textContent = "NOW STREAMING";
             this.headerText.classList.add("streaming");
+        } else if (state.mode === "bluos") {
+            this.headerText.textContent = "NOW PLAYING";
+            this.headerText.classList.add("streaming");
         } else if (state.mode === "coming_soon") {
             this.headerText.textContent = "COMING SOON";
             this.headerText.classList.add("coming-soon");
@@ -130,12 +133,15 @@ class PosterDisplay {
                 this.poster.src = imageUrl;
                 this.currentPosterUrl = imageUrl;
                 // Remove previous mode classes
-                this.poster.classList.remove("streaming-thumb");
+                this.poster.classList.remove("streaming-thumb", "bluos-art");
                 if (isAppLogo) {
                     this.posterInner.classList.add("app-logo-mode");
                 } else if (isYouTubeThumb) {
                     // Use contain for YouTube thumbnails to avoid cropping
                     this.poster.classList.add("streaming-thumb");
+                } else if (state.mode === "bluos") {
+                    // Album art is square - use contain to avoid zooming/cropping
+                    this.poster.classList.add("bluos-art");
                 }
             }, 300);
         } else if (!imageUrl && state.mode === "streaming") {
@@ -155,7 +161,7 @@ class PosterDisplay {
         this.movieYear.textContent = state.year || "";
         
         // Update play status
-        if (state.mode !== "coming_soon" && state.mode !== "idle" && state.mode !== "streaming") {
+        if (state.mode !== "coming_soon" && state.mode !== "idle" && state.mode !== "streaming" || state.mode === "bluos") {
             const status = this.getStatusText(state);
             this.playStatus.textContent = status;
             this.playStatus.className = "play-status" + (state.play_status === "paused" ? " paused" : "");
@@ -170,7 +176,8 @@ class PosterDisplay {
         const showProgress = state.mode !== "coming_soon" && 
                             state.mode !== "idle" && 
                             state.mode !== "streaming" &&
-                            state.duration_seconds > 0;
+                            state.duration_seconds > 0 ||
+                            state.mode === "bluos" && state.duration_seconds > 0;
         
         if (showProgress) {
             this.progressContainer.classList.add("visible");
@@ -185,7 +192,7 @@ class PosterDisplay {
         this.sourceIndicator.textContent = state.source_name || "";
         
         // Update debug indicator
-        if (state.using_cached_input) {
+        if (false && state.using_cached_input) {
             this.debugIndicator.textContent = "⚡ CACHED";
             this.debugIndicator.className = "debug-indicator cached";
         } else {

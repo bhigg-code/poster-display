@@ -6,3 +6,8 @@ venv/
 *.log
 backup-pi/
 config.json
+
+# editor/agent backups
+*.bak
+*.bak.*
+*.bak2

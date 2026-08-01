@@ -189,6 +189,24 @@ class ConfigManager:
                 return int(num)
         return None
     
+
+    @property
+    def marantz_host(self) -> str:
+        return self._config.get("bluos", {}).get("marantz_host", "192.168.4.7")
+
+    @property
+    def bluos_marantz_source(self) -> str:
+        return self._config.get("bluos", {}).get("marantz_source", "CD")
+
+    @property
+    def bluos_enabled(self) -> bool:
+        return self._config.get("bluos", {}).get("enabled", False)
+
+    @property
+    def bluos_inputs(self) -> list:
+        """List of Atlona input numbers configured as BluOS."""
+        return [int(k) for k, v in self._config.get("inputs", {}).items() if v.get("type") == "bluos" or v.get("bluos_host")]
+
     @property
     def plex_inputs(self) -> list[int]:
         """Get list of inputs configured for Plex."""
